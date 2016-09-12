@@ -17,6 +17,6 @@ $ cd goget2neo
 $ docker-compose up -d
 ```
 
-***Point your browser at http://localhost:7474 .***
+***Point your browser at [localhost:7474](http://localhost:7474]) .***
 
-*We used a [GFF file from EnsemblBacteria](ftp://ftp.ensemblgenomes.org/pub/bacteria/release-30/gff3/bacteria_0_collection/mycobacterium_tuberculosis_h37rv).*
+We used a [GFF file from EnsemblBacteria](ftp://ftp.ensemblgenomes.org/pub/bacteria/release-30/gff3/bacteria_0_collection/mycobacterium_tuberculosis_h37rv).
