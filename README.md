@@ -10,7 +10,7 @@ Parses GFF file and builds a Neo4j Graph database.
 $ git clone https://github.com/SANBI-SA/goget2neo.git
 $ cd goget2neo
 ```
-#### With `docker-compose:`
+### With `docker-compose:`
 **Run the following:**
 
 ```
@@ -19,7 +19,7 @@ $ docker-compose up -d
 
 ***Point your browser at [localhost:7474](http://localhost:7474]) .***
 
-#### Standalone
+### Standalone
 
 **Pull and run the [neo4j docker image](https://hub.docker.com/_/neo4j/):**
 
@@ -38,6 +38,7 @@ $ goget --help
 $ goget gff --help
 $ goget gff -rel data/MTB_H37rv.gff3
 ```
+***Point your browser at [localhost:7474](http://localhost:7474]) .***
 
 We used a [GFF file from EnsemblBacteria](ftp://ftp.ensemblgenomes.org/pub/bacteria/release-30/gff3/bacteria_0_collection/mycobacterium_tuberculosis_h37rv).
 
