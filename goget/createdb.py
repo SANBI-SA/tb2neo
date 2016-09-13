@@ -1,4 +1,4 @@
-from combat_tb_model.model import Organism, Feature, FeatureLoc
+from combat_tb_model.model import *
 from py2neo import watch, Graph, getenv
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
@@ -6,6 +6,10 @@ watch("neo4j.bolt")
 
 
 def create_organism_nodes():
+    """
+    Create Organism Nodes
+    :return:
+    """
     abbrev = "H37Rv"
     genus = "Mycobacterium"
     species = "M. tuberculosis"
@@ -15,21 +19,111 @@ def create_organism_nodes():
     graph.create(organism)
 
 
+def create_gene_nodes(feature):
+    """
+    Create Gene Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    gene = Gene()
+    gene.name = name
+    gene.uniquename = unique_name
+    graph.create(gene)
+
+
+def create_transcript_nodes(feature):
+    """
+    Create Transcipt Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    transcript = Transcript()
+    transcript.name = name
+    transcript.uniquename = unique_name
+    graph.create(transcript)
+
+
+def create_pseudogene_nodes(feature):
+    """
+    Create Pseudogene Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    pseudogene = PseudoGene()
+    pseudogene.uniquename = unique_name
+    graph.create(pseudogene)
+
+
+def create_exon_nodes(feature):
+    """
+    Create Exon Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    exon = Exon()
+    exon.name = name
+    exon.uniquename = unique_name
+    graph.create(exon)
+
+
+def create_rna_nodes(feature):
+    """
+    Create RNA Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    if feature.type == 'tRNA_gene':
+        trna = TRna()
+        trna.name = name
+        trna.uniquename = unique_name
+        graph.create(trna)
+    if feature.type == 'ncRNA_gene':
+        ncrna = NCRna()
+        ncrna.name = name
+        ncrna.uniquename = unique_name
+        graph.create(ncrna)
+    if feature.type == 'rRNA_gene':
+        rrna = RRna()
+        rrna.name = name
+        rrna.uniquename = unique_name
+        graph.create(rrna)
+
+
 def create_feature_nodes(feature):
     """
     Create Feature Nodes
     :param feature:
     :return:
     """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
     exclude = ['gene', 'pseudogene', 'tRNA_gene', 'ncRNA_gene', 'rRNA_gene']
     if feature.type in exclude:
         parent = None
     else:
         parent = feature.qualifiers['Parent'][0][feature.qualifiers['Parent'][0].find(":") + 1:]
-
-    names = get_feature_name(feature)
-    name = names.get("Name", names.get("UniqueName"))
-    unique_name = names.get("UniqueName", name)
 
     _feature = Feature()
     _feature.name = name

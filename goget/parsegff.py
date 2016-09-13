@@ -42,6 +42,17 @@ def load_gff_data(gff_file, limit):
     limit_info = dict(gff_type=limit)
     for rec in GFF.parse(gff_file, limit_info=limit_info):
         for feature in tqdm(rec.features):
+            rna = ["tRNA_gene", "ncRNA_gene", "rRNA_gene"]
             create_feature_nodes(feature)
+            if feature.type == 'gene':
+                create_gene_nodes(feature)
+            elif feature.type == 'transcript':
+                create_transcript_nodes(feature)
+            elif feature.type == 'pseudogene':
+                create_pseudogene_nodes(feature)
+            elif feature.type == 'exon':
+                create_exon_nodes(feature)
+            elif feature.type in rna:
+                create_rna_nodes(feature)
             create_featureloc_nodes(feature)
     in_file.close()

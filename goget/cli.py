@@ -25,7 +25,7 @@ def cli():
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
 @click.option('--rel', '--relations', default=False, is_flag=True, help='Build node relationships.')
-def gff(relations, gff_file):
+def init(relations, gff_file):
     """
     Load features from GFF file.
     :param gff_file:

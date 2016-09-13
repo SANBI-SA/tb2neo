@@ -24,7 +24,7 @@ $ docker-compose up -d
 **Pull and run the [neo4j docker image](https://hub.docker.com/_/neo4j/):**
 
 ```
-$ docker run -d -p 7474:7474 --name neo -e NEO4J_AUTH=none -v=$HOME/neo4j/data:/data neo4j:3.0.4
+$ docker run -d -p 7474:7474 -p 7687:7687 --name neo -e NEO4J_AUTH=none -v=$HOME/neo4j/data:/data neo4j:3.0.4
 ```
 
 **Create a virtual environment:**
@@ -36,7 +36,7 @@ $ pip install -r requirements.txt
 $ pip install --editable .
 $ goget --help
 $ goget gff --help
-$ goget gff -rel data/MTB_H37rv.gff3
+$ goget gff --rel data/MTB_H37rv.gff3
 ```
 ***Point your browser at [localhost:7474](http://localhost:7474]) .***
 

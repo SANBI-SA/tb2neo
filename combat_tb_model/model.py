@@ -28,7 +28,7 @@ class Feature(GraphObject):
     residues = Property()
     seqlen = Property()
     md5checksum = Property()
-    type = Property()
+    # type = Property()
     parent = Property()  # To build belongs_to rel.
     is_analysis = Property()
     is_obsolete = Property()
@@ -40,6 +40,42 @@ class Feature(GraphObject):
     related = RelatedTo("Feature", "RELATED_TO")
     published_in = RelatedTo("Publication", "PUBLISHED_IN")
     dbxref = RelatedTo("DbXref", "XREF")
+
+
+class Gene(Feature):
+    pass
+
+
+class PseudoGene(Feature):
+    pass
+
+
+class Transcript(Feature):
+    pass
+
+
+class TRna(Feature):
+    pass
+
+
+class NCRna(Feature):
+    pass
+
+
+class RRna(Feature):
+    pass
+
+
+class Exon(Feature):
+    pass
+
+
+class CDS(Feature):
+    pass
+
+
+class Protein(Feature):
+    pass
 
 
 class FeatureLoc(GraphObject):
