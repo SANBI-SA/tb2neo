@@ -16,6 +16,6 @@ setup(
         'beautifulsoup4'
     ],
     entry_points={
-        'console_scripts': ['goget=goget:cli']
+        'console_scripts': ['goget=goget.cli:cli']
     },
 )
