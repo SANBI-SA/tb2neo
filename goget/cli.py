@@ -24,7 +24,7 @@ def cli():
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
-@click.option('-rel', '--relations', default=False, is_flag=True, help='Build node relationships.')
+@click.option('--rel', '--relations', default=False, is_flag=True, help='Build node relationships.')
 def gff(relations, gff_file):
     """
     Load features from GFF file.
@@ -50,13 +50,13 @@ def inspect(gff_file):
     examine(gff_file)
 
 
-@cli.command()
-def relationships():
-    """
-    Build relationships between loaded features.
-    :return:
-    """
-    build_relationships()
+# @cli.command()
+# def relationships():
+#     """
+#     Build relationships between loaded features.
+#     :return:
+#     """
+#     build_relationships()
 
 
 if __name__ == '__main__':

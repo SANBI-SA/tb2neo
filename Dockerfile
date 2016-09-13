@@ -14,4 +14,4 @@ WORKDIR /code
 
 RUN pip install --editable .
 
-CMD ["goget" ,"gff", "data/MTB_H37rv.gff3"]
+CMD ["goget" ,"gff", "-rel", "data/MTB_H37rv.gff3"]
