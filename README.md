@@ -35,8 +35,8 @@ $ source envname/bin/activate
 $ pip install -r requirements.txt
 $ pip install --editable .
 $ goget --help
-$ goget gff --help
-$ goget gff --rel data/MTB_H37rv.gff3
+$ goget init --help
+$ goget init --r data/MTB_H37rv.gff3
 ```
 ***Point your browser at [localhost:7474](http://localhost:7474]) .***
 
