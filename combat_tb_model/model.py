@@ -37,13 +37,13 @@ class Feature(GraphObject):
 
     belongs_to = RelatedTo("Organism", "BELONGS_TO")
     location = RelatedTo("FeatureLoc", "LOCATED_AT")
-    related = RelatedTo("Feature", "RELATED_TO")
+    related_to = RelatedTo("Feature", "RELATED_TO")
     published_in = RelatedTo("Publication", "PUBLISHED_IN")
     dbxref = RelatedTo("DbXref", "XREF")
 
 
 class Gene(Feature):
-    pass
+    is_a = RelatedTo("Feature", "IS_A")
 
 
 class PseudoGene(Feature):
@@ -51,7 +51,8 @@ class PseudoGene(Feature):
 
 
 class Transcript(Feature):
-    pass
+    is_a = RelatedTo("Feature", "IS_A")
+    part_of = RelatedTo("Gene", "PART_OF")
 
 
 class TRna(Feature):
@@ -67,7 +68,8 @@ class RRna(Feature):
 
 
 class Exon(Feature):
-    pass
+    is_a = RelatedTo("Feature", "IS_A")
+    part_of = RelatedTo("Transcript", "PART_OF")
 
 
 class CDS(Feature):

@@ -2,7 +2,7 @@ from combat_tb_model.model import *
 from py2neo import watch, Graph, getenv
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
-watch("neo4j.bolt")
+# watch("neo4j.bolt")
 
 
 def create_organism_nodes():
@@ -109,6 +109,22 @@ def create_rna_nodes(feature):
         graph.create(rrna)
 
 
+def create_cds_nodes(feature):
+    """
+    Create CDS Nodes
+    :param feature:
+    :return:
+    """
+    names = get_feature_name(feature)
+    name = names.get("Name", names.get("UniqueName"))
+    unique_name = names.get("UniqueName", name)
+
+    cds = CDS()
+    cds.name = name
+    cds.uniquename = unique_name
+    graph.create(cds)
+
+
 def create_feature_nodes(feature):
     """
     Create Feature Nodes
@@ -165,17 +181,33 @@ def build_relationships():
     Build relationships
     :return:
     """
-    watch("neo4j.bolt")
+    # watch("neo4j.bolt")
     print("Building Relationships...")
     features = Feature.select(graph)
     for feature in features:
         # Find organism via __primarykey__ and link with feature via BELONGS_TO
         org = Organism.select(graph, 'Mycobacterium').first()
         feature.belongs_to.add(org)
+
+        # Building is_a relationships
+        gene = Gene.select(graph, feature.uniquename).first()
+        if gene:
+            gene.is_a.add(feature)
+            graph.push(gene)
+        transcript = Transcript.select(graph, feature.uniquename).first()
+        if transcript:
+            transcript.is_a.add(feature)
+            graph.push(transcript)
+        exon = Exon.select(graph, feature.uniquename).first()
+        if exon:
+            exon.is_a.add(feature)
+            graph.push(exon)
+
         # Find feature with a parent attr. matching this features uniquename and link them via RELATED_TO
         _feature = Feature.select(graph).where("_.parent = '{}'".format(feature.uniquename)).first()
-        if _feature and feature.type is not _feature.type:
-            feature.related.add(_feature)
+        # _feature = Feature.select(graph, feature.uniquename).first()
+        if _feature:
+            feature.related_to.add(_feature)
         # Find feature location with a srcfeature_id attr. matching this features uniquename and link them via
         # LOCATED_AT
         _feature = FeatureLoc.select(graph, feature.uniquename).first()

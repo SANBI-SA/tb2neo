@@ -2,7 +2,7 @@ import pprint
 
 from BCBio import GFF
 from BCBio.GFF import GFFExaminer
-from createdb import *
+from dbconn import *
 from tqdm import tqdm
 
 
@@ -23,6 +23,7 @@ def parse_gff(gff_file):
     Parse GFF file
     :return:
     """
+
     create_organism_nodes()
     limits = [["gene", "pseudogene", "exon", "tRNA_gene", "ncRNA_gene", "rRNA_gene"], ["transcript"], ["CDS"]]
     for limit in limits:
@@ -46,13 +47,15 @@ def load_gff_data(gff_file, limit):
             create_feature_nodes(feature)
             if feature.type == 'gene':
                 create_gene_nodes(feature)
-            elif feature.type == 'transcript':
-                create_transcript_nodes(feature)
             elif feature.type == 'pseudogene':
                 create_pseudogene_nodes(feature)
             elif feature.type == 'exon':
                 create_exon_nodes(feature)
             elif feature.type in rna:
                 create_rna_nodes(feature)
+            elif feature.type == 'transcript':
+                create_transcript_nodes(feature)
+            elif feature.type == 'CDS':
+                create_cds_nodes(feature)
             create_featureloc_nodes(feature)
     in_file.close()

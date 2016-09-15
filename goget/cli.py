@@ -1,8 +1,6 @@
-import time
-
 import click
-from createdb import *
-from parsegff import examine, parse_gff
+from dbconn import *
+from gffproc import examine, parse_gff
 
 
 def delete_data():
@@ -17,48 +15,46 @@ def delete_data():
 @click.group()
 def cli():
     """
-    This script parses in features from a GFF file and builds a Neo4j Graph database.
+    This script parses a GFF file and builds a Neo4j Graph database.
     """
     pass
 
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
-@click.option('--rel', '--relations', default=False, is_flag=True, help='Build node relationships.')
-def init(relations, gff_file):
+@click.option('--d', '--delete', default=True, is_flag=True, prompt='Delete existing database?',
+              help='Delete existing data.')
+@click.option('--r', '--relationships', default=False, is_flag=True, prompt='Build node relationships?',
+              help='Build node relationships.')
+def init(gff_file, delete, relationships):
     """
     Load features from GFF file.
     :param gff_file:
-    :param relations:
+    :param delete:
+    :param relationships:
     :return:
     """
-    # Deleting existing data
-    delete_data()
-    parse_gff(gff_file)
-    if relations:
+    # Deleting existing data and load features or
+    # build relationships from existing data
+    if delete:
+        delete_data()
+        parse_gff(gff_file)
+    elif relationships:
         build_relationships()
+    else:
+        click.Abort()
 
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
 def inspect(gff_file):
     """
-    Examine GFF file for the type of data present.
+    Examine GFF file.
     :param gff_file:
     :return:
     """
     examine(gff_file)
 
 
-# @cli.command()
-# def relationships():
-#     """
-#     Build relationships between loaded features.
-#     :return:
-#     """
-#     build_relationships()
-
-
 if __name__ == '__main__':
-    time.sleep(20)
     cli()
