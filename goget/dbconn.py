@@ -207,9 +207,10 @@ def build_relationships():
             if _feature:
                 # Find transcript: A gene is a parent to it.
                 transcript = Transcript.select(graph, _feature.uniquename).first()
-                print("+++++++++PART_OF+++++++++")
-                transcript.part_of.add(gene)
-                graph.push(transcript)
+                if transcript:
+                    print("+++++++++PART_OF+++++++++")
+                    transcript.part_of.add(gene)
+                    graph.push(transcript)
 
         p_gene = PseudoGene.select(graph, feature.uniquename).first()
         if p_gene:
@@ -224,14 +225,16 @@ def build_relationships():
             if _feature:
                 # Find exon: A transcript is a parent to it
                 exon = Exon.select(graph, _feature.uniquename).first()
-                print("+++++++++PART_OF+++++++++")
-                exon.part_of.add(transcript)
-                graph.push(exon)
+                if exon:
+                    print("+++++++++PART_OF+++++++++")
+                    exon.part_of.add(transcript)
+                    graph.push(exon)
                 # Find cds: A transcript is a parent to it
                 cds = CDS.select(graph, _feature.uniquename).first()
-                print("+++++++++PART_OF+++++++++")
-                cds.part_of.add(transcript)
-                graph.push(cds)
+                if cds:
+                    print("+++++++++PART_OF+++++++++")
+                    cds.part_of.add(transcript)
+                    graph.push(cds)
 
         exon = Exon.select(graph, feature.uniquename).first()
         if exon:
