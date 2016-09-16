@@ -34,12 +34,13 @@ def init(gff_file, delete, relationships):
     :param relationships:
     :return:
     """
-    # Deleting existing data and load features or
+    # Deleting existing data, load features and build relationships or
     # build relationships from existing data
-    if delete:
+    if delete and relationships:
         delete_data()
         parse_gff(gff_file)
-    elif relationships:
+        build_relationships()
+    elif not delete and relationships:
         build_relationships()
     else:
         click.Abort()

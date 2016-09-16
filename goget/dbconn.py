@@ -2,7 +2,7 @@ from combat_tb_model.model import *
 from py2neo import watch, Graph, getenv
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
-# watch("neo4j.bolt")
+watch("neo4j.bolt")
 
 
 def create_organism_nodes():
@@ -62,6 +62,7 @@ def create_pseudogene_nodes(feature):
     unique_name = names.get("UniqueName", name)
 
     pseudogene = PseudoGene()
+    pseudogene.name = name
     pseudogene.uniquename = unique_name
     graph.create(pseudogene)
 
@@ -135,11 +136,11 @@ def create_feature_nodes(feature):
     name = names.get("Name", names.get("UniqueName"))
     unique_name = names.get("UniqueName", name)
 
-    exclude = ['gene', 'pseudogene', 'tRNA_gene', 'ncRNA_gene', 'rRNA_gene']
-    if feature.type in exclude:
-        parent = None
+    if feature.qualifiers.get('Parent'):
+        parent = feature.qualifiers['Parent'][0]
+    # [feature.qualifiers['Parent'][0].find(":") + 1:]
     else:
-        parent = feature.qualifiers['Parent'][0][feature.qualifiers['Parent'][0].find(":") + 1:]
+        parent = None
 
     _feature = Feature()
     _feature.name = name
@@ -170,9 +171,11 @@ def get_feature_name(feature):
     names = dict()
     if feature.qualifiers.get("Name"):
         names["Name"] = feature.qualifiers["Name"][0]
-        names["UniqueName"] = feature.id[feature.id.find(":") + 1:]
+        names["UniqueName"] = feature.id
+        # [feature.id.find(":") + 1:]
     else:
-        names["Name"] = names["UniqueName"] = feature.id[feature.id.find(":") + 1:]
+        names["Name"] = names["UniqueName"] = feature.id
+        # [feature.id.find(":") + 1:]
     return names
 
 
@@ -181,7 +184,7 @@ def build_relationships():
     Build relationships
     :return:
     """
-    # watch("neo4j.bolt")
+    watch("neo4j.bolt")
     print("Building Relationships...")
     features = Feature.select(graph)
     for feature in features:
@@ -189,25 +192,56 @@ def build_relationships():
         org = Organism.select(graph, 'Mycobacterium').first()
         feature.belongs_to.add(org)
 
+        # Find feature with a parent attr. matching this features uniquename and link them via RELATED_TO
+        _feature = Feature.select(graph).where("_.parent = '{}'".format(feature.uniquename)).first()
+        if _feature:
+            feature.related_to.add(_feature)
+
         # Building is_a relationships
         gene = Gene.select(graph, feature.uniquename).first()
         if gene:
             gene.is_a.add(feature)
             graph.push(gene)
+            # Find feature with this gene's uniquename as a parent
+            _feature = Feature.select(graph).where("_.parent = '{}'".format(gene.uniquename)).first()
+            if _feature:
+                # Find transcript: A gene is a parent to it.
+                transcript = Transcript.select(graph, _feature.uniquename).first()
+                print("+++++++++PART_OF+++++++++")
+                transcript.part_of.add(gene)
+                graph.push(transcript)
+
+        p_gene = PseudoGene.select(graph, feature.uniquename).first()
+        if p_gene:
+            p_gene.is_a.add(feature)
+            graph.push(p_gene)
         transcript = Transcript.select(graph, feature.uniquename).first()
         if transcript:
             transcript.is_a.add(feature)
             graph.push(transcript)
+            # Find feature with this transcript's uniquename as a parent
+            _feature = Feature.select(graph).where("_.parent = '{}'".format(transcript.uniquename)).first()
+            if _feature:
+                # Find exon: A transcript is a parent to it
+                exon = Exon.select(graph, _feature.uniquename).first()
+                print("+++++++++PART_OF+++++++++")
+                exon.part_of.add(transcript)
+                graph.push(exon)
+                # Find cds: A transcript is a parent to it
+                cds = CDS.select(graph, _feature.uniquename).first()
+                print("+++++++++PART_OF+++++++++")
+                cds.part_of.add(transcript)
+                graph.push(cds)
+
         exon = Exon.select(graph, feature.uniquename).first()
         if exon:
             exon.is_a.add(feature)
             graph.push(exon)
+        cds = CDS.select(graph, feature.uniquename).first()
+        if cds:
+            cds.is_a.add(feature)
+            graph.push(cds)
 
-        # Find feature with a parent attr. matching this features uniquename and link them via RELATED_TO
-        _feature = Feature.select(graph).where("_.parent = '{}'".format(feature.uniquename)).first()
-        # _feature = Feature.select(graph, feature.uniquename).first()
-        if _feature:
-            feature.related_to.add(_feature)
         # Find feature location with a srcfeature_id attr. matching this features uniquename and link them via
         # LOCATED_AT
         _feature = FeatureLoc.select(graph, feature.uniquename).first()
