@@ -42,42 +42,54 @@ class Feature(GraphObject):
 
 
 class Gene(Feature):
+    ontology_id = "SO:0000704"
+
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class PseudoGene(Feature):
+    ontology_id = "SO:0000336"
+
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class Transcript(Feature):
+    ontology_id = "SO:0000673"
+
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Gene", "PART_OF")
 
 
 class TRna(Feature):
-    pass
+    ontology_id = "SO:0000253"
 
 
 class NCRna(Feature):
-    pass
+    ontology_id = "SO:0000655"
 
 
 class RRna(Feature):
-    pass
+    ontology_id = "SO:0000252"
 
 
 class Exon(Feature):
+    ontology_id = "SO:0000147"
+
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Transcript", "PART_OF")
 
 
 class CDS(Feature):
+    ontology_id = "SO:0000316"
+
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Transcript", "PART_OF")
 
 
 class Protein(Feature):
-    pass
+    ontology_id = "SO:0000104"
+
+    derives_from = RelatedTo("CDS", "DERIVES_FROM")
 
 
 class FeatureLoc(GraphObject):
