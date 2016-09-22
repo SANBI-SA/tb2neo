@@ -30,6 +30,7 @@ def create_gene_nodes(feature):
     unique_name = names.get("UniqueName", name)
 
     gene = Gene()
+    gene.ontology_id = gene.so_id
     gene.name = name
     gene.uniquename = unique_name
     graph.create(gene)
@@ -46,6 +47,7 @@ def create_transcript_nodes(feature):
     unique_name = names.get("UniqueName", name)
 
     transcript = Transcript()
+    transcript.ontology_id = transcript.so_id
     transcript.name = name
     transcript.uniquename = unique_name
     graph.create(transcript)
@@ -62,6 +64,7 @@ def create_pseudogene_nodes(feature):
     unique_name = names.get("UniqueName", name)
 
     pseudogene = PseudoGene()
+    pseudogene.ontology_id = pseudogene.so_id
     pseudogene.name = name
     pseudogene.uniquename = unique_name
     graph.create(pseudogene)
@@ -78,6 +81,7 @@ def create_exon_nodes(feature):
     unique_name = names.get("UniqueName", name)
 
     exon = Exon()
+    exon.ontology_id = exon.so_id
     exon.name = name
     exon.uniquename = unique_name
     graph.create(exon)
@@ -95,16 +99,19 @@ def create_rna_nodes(feature):
 
     if feature.type == 'tRNA_gene':
         trna = TRna()
+        trna.ontology_id = trna.so_id
         trna.name = name
         trna.uniquename = unique_name
         graph.create(trna)
     if feature.type == 'ncRNA_gene':
         ncrna = NCRna()
+        ncrna.ontology_id = ncrna.so_id
         ncrna.name = name
         ncrna.uniquename = unique_name
         graph.create(ncrna)
     if feature.type == 'rRNA_gene':
         rrna = RRna()
+        rrna.ontology_id = rrna.so_id
         rrna.name = name
         rrna.uniquename = unique_name
         graph.create(rrna)
@@ -184,7 +191,6 @@ def build_relationships():
     Build relationships
     :return:
     """
-    watch("neo4j.bolt")
     print("Building Relationships...")
     features = Feature.select(graph)
     for feature in features:
@@ -208,7 +214,6 @@ def build_relationships():
                 # Find transcript: A gene is a parent to it.
                 transcript = Transcript.select(graph, _feature.uniquename).first()
                 if transcript:
-                    print("+++++++++PART_OF+++++++++")
                     transcript.part_of.add(gene)
                     graph.push(transcript)
 
@@ -226,13 +231,11 @@ def build_relationships():
                 # Find exon: A transcript is a parent to it
                 exon = Exon.select(graph, _feature.uniquename).first()
                 if exon:
-                    print("+++++++++PART_OF+++++++++")
                     exon.part_of.add(transcript)
                     graph.push(exon)
                 # Find cds: A transcript is a parent to it
                 cds = CDS.select(graph, _feature.uniquename).first()
                 if cds:
-                    print("+++++++++PART_OF+++++++++")
                     cds.part_of.add(transcript)
                     graph.push(cds)
 

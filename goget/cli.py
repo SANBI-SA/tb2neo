@@ -42,6 +42,9 @@ def init(gff_file, delete, relationships):
         build_relationships()
     elif not delete and relationships:
         build_relationships()
+    elif delete and not relationships:
+        delete_data()
+        parse_gff(gff_file)
     else:
         click.Abort()
 
