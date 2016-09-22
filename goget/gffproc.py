@@ -32,6 +32,27 @@ def parse_gff(gff_file):
     print("Done.")
 
 
+def get_locus_tags(gff_file, chunk):
+    """
+    Return a list of locus tags from gff_file
+    :param gff_file:
+    :param chunk
+    :return:
+    """
+    count = 0
+    locus_tags = []
+    for rec in GFF.parse(gff_file, limit_info=dict(gff_type=['gene'])):
+        for gene in rec.features:
+            locus_tag = gene.qualifiers["gene_id"][0]
+            count += 1
+            locus_tags.append(locus_tag.lower())
+            if count == chunk:
+                yield locus_tags
+                locus_tags = []
+                count = 0
+    yield locus_tags
+
+
 def load_gff_data(gff_file, limit):
     """
     Extract and load features to Neo4j
