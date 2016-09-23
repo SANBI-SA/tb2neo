@@ -23,11 +23,11 @@ def cli():
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
-@click.option('--d', '--delete', default=True, is_flag=True, prompt='Delete existing database?',
+@click.option('--d', '--delete', default=False, is_flag=True, prompt='Delete existing database?',
               help='Delete existing data.')
 @click.option('--r', '--relationships', default=False, is_flag=True, prompt='Build node relationships?',
               help='Build node relationships.')
-@click.option('--u', '--uniprot', default=False, is_flag=True, prompt='Query UniProt?',
+@click.option('--u', '--uniprot', default=True, is_flag=True, prompt='Query UniProt?',
               help='Query UniProt using locus tags.')
 def init(gff_file, delete, relationships, uniprot):
     """
