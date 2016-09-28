@@ -1,7 +1,10 @@
-import csv
-
 import StringIO
+import csv
+from time import time
+
 from bioservices import UniProt
+from dbconn import create_uniprot_nodes
+from tqdm import tqdm
 
 u = UniProt(verbose=False)
 
@@ -32,15 +35,16 @@ def query_uniprot(locus_tags):
     :param locus_tags:
     :return:
     """
+    start = time()
     columns = "id, genes, go-id, interpro, interactor, genes(PREFERRED), feature(DOMAIN EXTENT), protein names, go, " \
               "citation, 3d, comment(FUNCTION), sequence, mass, length, families, go(biological process), " \
               "go(molecular function), go(cellular component)"
     ambiguous_names = []
     uniprot_data = []
-    for tag_list in locus_tags:
+    for tag_list in tqdm(locus_tags):
         query = '(' + '+OR+'.join(['gene:' + name for name in tag_list]) + ')'
         result = search_uniprot(query, columns)
-        locus_tag_set = set([locus_tag.lower() for locus_tag in tag_list])
+        locus_tag_set = set(tag_list)
         new_rows = []
         for row in result:
             names = row[1].replace('/', ' ').split()
@@ -58,7 +62,8 @@ def query_uniprot(locus_tags):
                             found_name = name
                             found_count += 1
             if found_name:
-                assert found_count >= 1, "Problem with ({}); count ({}); row ({})".format(found_name, found_count, row)
+                assert found_count >= 1, "Problem with ({}); count ({});\n row ({})".format(found_name, found_count,
+                                                                                            row)
 
             if found_count > 1:
                 ambiguous_names.extend([name for name in names if name.startswith('Rv')])
@@ -72,7 +77,9 @@ def query_uniprot(locus_tags):
             assert len(rows) == 1, "Got multiple results for {}.".format(name)
             new_row = save_row(name, rows[0])
             uniprot_data.append(new_row)
-        print(uniprot_data)
+    end = time()
+    print("Done fetching data from UniProt in ", end - start, "secs.")
+    create_uniprot_nodes(uniprot_data)
     return uniprot_data
 
 
@@ -80,4 +87,3 @@ def save_row(found_name, row):
     return [found_name, row[0], row[1], row[2].split('; '), row[3].split('; '), row[4], row[5], row[6].split('; '),
             row[7], row[8].split('; '), row[9].split('; '), row[10].split('; '), row[11], row[12], row[13], row[14],
             row[15], row[16], row[17], row[18]]
-

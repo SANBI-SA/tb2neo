@@ -2,6 +2,7 @@ import click
 from dbconn import *
 from gffproc import examine, parse_gff, get_locus_tags
 from uniprot import query_uniprot
+from time import time
 
 
 def delete_data():
@@ -41,21 +42,36 @@ def init(gff_file, delete, relationships, uniprot):
     # Deleting existing data, load features and build relationships or
     # build relationships from existing data
     if delete and relationships:
+        start = time()
         delete_data()
         parse_gff(gff_file)
         build_relationships()
+        end = time()
+        print("Done in ", end - start, "secs.")
     elif not delete and relationships:
+        start = time()
         build_relationships()
+        end = time()
+        print("Done in ", end - start, "secs.")
     elif delete and not relationships:
+        start = time()
         delete_data()
         parse_gff(gff_file)
+        end = time()
+        print("Done in ", end - start, "secs.")
     elif delete and relationships and uniprot:
+        start = time()
         delete_data()
         parse_gff(gff_file)
         build_relationships()
         query_uniprot(get_locus_tags(gff_file, 400))
+        end = time()
+        print("Done in ", end - start, "secs.")
     elif not delete and not relationships and uniprot:
+        start = time()
         query_uniprot(get_locus_tags(gff_file, 400))
+        end = time()
+        print("Done in ", end - start, "secs.")
     else:
         click.Abort()
 

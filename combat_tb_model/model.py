@@ -40,6 +40,7 @@ class Feature(GraphObject):
     related_to = RelatedTo("Feature", "RELATED_TO")
     published_in = RelatedTo("Publication", "PUBLISHED_IN")
     dbxref = RelatedTo("DbXref", "XREF")
+    cvterm = RelatedTo("CvTerm", "ASSOC_WITH")
 
 
 class Gene(Feature):
@@ -170,7 +171,9 @@ class CvTerm(GraphObject):
     is_obsolete = Property()
 
     dbxref = RelatedTo("DbXref", "XREF")
-    related = RelatedTo("CvTerm", "RELATED_TO")
+    is_a = RelatedTo("CvTerm", "IS_A")
+    part_of = RelatedTo("CvTerm", "PART_OF")
+    feature = RelatedFrom("Feature", "ASSOC_WITH")
 
     def __init__(self, name=None, definition=None, is_obsolete=None):
         self.name = name

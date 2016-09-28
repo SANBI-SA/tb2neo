@@ -151,7 +151,6 @@ def create_feature_nodes(feature):
 
     _feature = Feature()
     _feature.name = name
-    _feature.type = feature.type
     _feature.parent = parent
     _feature.uniquename = unique_name
     graph.create(_feature)
@@ -254,3 +253,21 @@ def build_relationships():
         if _feature:
             feature.location.add(_feature)
         graph.push(feature)
+
+
+def create_uniprot_nodes(uniprot_data):
+    for entry in uniprot_data:
+        feature = Feature()
+        feature.name = entry[8]
+        feature.parent = entry[0]
+        feature.uniquename = entry[1]
+        graph.create(feature)
+
+        protein = Protein()
+        protein.name = feature.name
+        protein.parent = feature.parent
+        protein.uniquename = feature.uniquename
+        graph.create(protein)
+
+        gene = Gene.select(graph).where("_.uniquename = '{}'".format(entry[0])).first()
+        p_gene = PseudoGene.select(graph).where("_.uniquename = '{}'".format(entry[0])).first()
