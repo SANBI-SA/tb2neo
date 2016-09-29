@@ -45,7 +45,6 @@ def query_uniprot(locus_tags, uniprot_data_file=None):
             data = open(uniprot_data_file, 'rb').read()
         except IOError:
             uniprot_data = []
-            open(uniprot_data_file, 'wb')
         else:
             if len(data) == 0:
                 uniprot_data = []
@@ -99,9 +98,10 @@ def query_uniprot(locus_tags, uniprot_data_file=None):
             uniprot_data.append(new_row)
     if uniprot_data_file is not None:
         print("Checking if uniprot_data_file is empty...")
+        f = open(uniprot_data_file, 'wb')
         if os.stat(uniprot_data_file).st_size == 0:
             print("Dumping uniprot_data to file.")
-            json.dump(uniprot_data, uniprot_data_file)
+            json.dump(uniprot_data, f)
     end = time()
     print("Done fetching data from UniProt in ", end - start, "secs.")
     create_uniprot_nodes(uniprot_data)
