@@ -257,17 +257,12 @@ def build_relationships():
 
 def create_uniprot_nodes(uniprot_data):
     for entry in uniprot_data:
-        feature = Feature()
-        feature.name = entry[8]
-        feature.parent = entry[0]
-        feature.uniquename = entry[1]
-        graph.create(feature)
+        dbxref = DbXref(db="UniProt", accession=entry[1])
+        graph.create(dbxref)
 
-        protein = Protein()
-        protein.name = feature.name
-        protein.parent = feature.parent
-        protein.uniquename = feature.uniquename
-        graph.create(protein)
-
-        gene = Gene.select(graph).where("_.uniquename = '{}'".format(entry[0])).first()
-        p_gene = PseudoGene.select(graph).where("_.uniquename = '{}'".format(entry[0])).first()
+        gene = Gene.select(graph, "gene:" + str(entry[0])).first()
+        if gene:
+            print("GENE:", gene.name)
+        p_gene = PseudoGene.select(graph, "gene:" + str(entry[0])).first()
+        if p_gene:
+            print("PSEUDOGENE:", p_gene.name)

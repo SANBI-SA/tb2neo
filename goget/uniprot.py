@@ -1,5 +1,7 @@
 import StringIO
 import csv
+import json
+import os
 from time import time
 
 from bioservices import UniProt
@@ -29,18 +31,36 @@ def search_uniprot(query, columns, proteome='UP000001584'):
         return list(reader)
 
 
-def query_uniprot(locus_tags):
+def query_uniprot(locus_tags, uniprot_data_file=None):
     """
     Get data from UniProt
     :param locus_tags:
+    :param uniprot_data_file:
     :return:
     """
+    print("Querying UniProt...")
+    if uniprot_data_file is not None:
+        try:
+            print("Trying uniprot_data_file...")
+            data = open(uniprot_data_file, 'rb').read()
+        except IOError:
+            uniprot_data = []
+            open(uniprot_data_file, 'wb')
+        else:
+            if len(data) == 0:
+                uniprot_data = []
+            else:
+                print("Loading uniprot_data_file...")
+                uniprot_data = json.loads(data)
+    else:
+        print("Did not find uniprot_data_file.")
+        uniprot_data = []
     start = time()
     columns = "id, genes, go-id, interpro, interactor, genes(PREFERRED), feature(DOMAIN EXTENT), protein names, go, " \
               "citation, 3d, comment(FUNCTION), sequence, mass, length, families, go(biological process), " \
               "go(molecular function), go(cellular component)"
     ambiguous_names = []
-    uniprot_data = []
+    # uniprot_data = []
     for tag_list in tqdm(locus_tags):
         query = '(' + '+OR+'.join(['gene:' + name for name in tag_list]) + ')'
         result = search_uniprot(query, columns)
@@ -77,6 +97,11 @@ def query_uniprot(locus_tags):
             assert len(rows) == 1, "Got multiple results for {}.".format(name)
             new_row = save_row(name, rows[0])
             uniprot_data.append(new_row)
+    if uniprot_data_file is not None:
+        print("Checking if uniprot_data_file is empty...")
+        if os.stat(uniprot_data_file).st_size == 0:
+            print("Dumping uniprot_data to file.")
+            json.dump(uniprot_data, uniprot_data_file)
     end = time()
     print("Done fetching data from UniProt in ", end - start, "secs.")
     create_uniprot_nodes(uniprot_data)
