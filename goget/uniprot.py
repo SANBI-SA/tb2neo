@@ -81,7 +81,7 @@ def query_uniprot(locus_tags):
             uniprot_data.append(new_row)
     end = time()
     print("Done fetching data from UniProt in ", end - start, "secs.")
-    create_uniprot_nodes(set(uniprot_data))
+    create_uniprot_nodes(uniprot_data)
     return uniprot_data
 
 
