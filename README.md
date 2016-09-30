@@ -36,7 +36,7 @@ $ pip install -r requirements.txt
 $ pip install --editable .
 $ goget --help
 $ goget init --help
-$ goget init --d --r --u data/MTB_H37rv.gff3 --uniprot_data_file data/uniprot_data_file.json
+$ goget init --d --r --u data/MTB_H37rv.gff3
 ```
 ***Point your browser at [localhost:7474](http://localhost:7474]) .***
 

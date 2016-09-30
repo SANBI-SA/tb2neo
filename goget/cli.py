@@ -24,7 +24,6 @@ def cli():
 
 
 @cli.command()
-@click.option('--uniprot_data_file', default=None)
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
 @click.option('--d', '--delete', default=False, is_flag=True, prompt='Delete existing database?',
               help='Delete existing data.')
@@ -32,14 +31,13 @@ def cli():
               help='Build node relationships.')
 @click.option('--u', '--uniprot', default=True, is_flag=True, prompt='Query UniProt?',
               help='Query UniProt using locus tags.')
-def init(gff_file, delete, relationships, uniprot, uniprot_data_file):
+def init(gff_file, delete, relationships, uniprot):
     """
     Load features from GFF file.
     :param gff_file:
     :param delete:
     :param relationships:
     :param uniprot:
-    :param uniprot_data_file:
     :return:
     """
     # Deleting existing data, load features and build relationships or
@@ -67,12 +65,12 @@ def init(gff_file, delete, relationships, uniprot, uniprot_data_file):
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        query_uniprot(get_locus_tags(gff_file, 400), uniprot_data_file=uniprot_data_file)
+        query_uniprot(get_locus_tags(gff_file, 400))
         end = time()
         print("Done in ", end - start, "secs.")
     elif not delete and not relationships and uniprot:
         start = time()
-        query_uniprot(get_locus_tags(gff_file, 400), uniprot_data_file=uniprot_data_file)
+        query_uniprot(get_locus_tags(gff_file, 400))
         end = time()
         print("Done in ", end - start, "secs.")
     else:

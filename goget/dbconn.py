@@ -256,13 +256,10 @@ def build_relationships():
 
 
 def create_uniprot_nodes(uniprot_data):
+    count = 0
     for entry in uniprot_data:
+        count += 1
         dbxref = DbXref(db="UniProt", accession=entry[1])
         graph.create(dbxref)
-
-        gene = Gene.select(graph, "gene:" + str(entry[0])).first()
-        if gene:
-            print("GENE:", gene.name)
-        p_gene = PseudoGene.select(graph, "gene:" + str(entry[0])).first()
-        if p_gene:
-            print("PSEUDOGENE:", p_gene.name)
+        print(count)
+    print ("TOTAL:", count)

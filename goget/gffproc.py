@@ -48,7 +48,7 @@ def get_locus_tags(gff_file, chunk):
         for gene in rec.features:
             locus_tag = gene.qualifiers["gene_id"][0]
             count += 1
-            locus_tags.append(locus_tag.lower())
+            locus_tags.append(locus_tag)
             if count == chunk:
                 yield locus_tags
                 locus_tags = []

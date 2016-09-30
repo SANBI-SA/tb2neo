@@ -14,4 +14,4 @@ WORKDIR /code
 
 RUN pip install --editable .
 
-CMD ["goget" ,"init", "--d", "--r", "--u", "data/MTB_H37rv.gff3", "--uniprot_data_file", "data/uniprot_data_file.json" ]
+CMD ["goget" ,"init", "--d", "--r", "--u", "data/MTB_H37rv.gff3"]
