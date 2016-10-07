@@ -256,10 +256,20 @@ def build_relationships():
 
 
 def create_uniprot_nodes(uniprot_data):
+    """
+    Build DbXref nodes from UniProt results
+    :param uniprot_data:
+    :return:
+    """
     count = 0
     for entry in uniprot_data:
         count += 1
         dbxref = DbXref(db="UniProt", accession=entry[0])
-        graph.create(dbxref)
-        print(count)
+        graph.create(dbxref)  # 3980 created of 3998 UniProt entries
+        protein = Protein()
+        protein.name = entry[8]
+        protein.uniquename = entry[0]
+        protein.ontology_id = protein.so_id
+        protein.parent = entry[1]
+        graph.create(protein)
     print ("TOTAL:", count)
