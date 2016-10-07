@@ -130,6 +130,7 @@ def create_cds_nodes(feature):
     cds = CDS()
     cds.name = name
     cds.uniquename = unique_name
+    cds.ontology_id = cds.so_id
     graph.create(cds)
 
 
