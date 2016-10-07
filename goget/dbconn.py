@@ -259,7 +259,7 @@ def create_uniprot_nodes(uniprot_data):
     count = 0
     for entry in uniprot_data:
         count += 1
-        dbxref = DbXref(db="UniProt", accession=entry[1])
+        dbxref = DbXref(db="UniProt", accession=entry[0])
         graph.create(dbxref)
         print(count)
     print ("TOTAL:", count)
