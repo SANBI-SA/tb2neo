@@ -275,6 +275,35 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.residues = entry[14]
         polypeptide.parent = entry[2]
         graph.create(polypeptide)
+
+        # go(biological process)
+        go_bp_ids = [t[t.find('G'):-1] for t in entry[18].split('; ')]
+        go_bp_defs = [t[:t.find('[') - 1] for t in entry[18].split('; ')]
+        # go(molecular function)
+        go_mf_ids = [t[t.find('G'):-1] for t in entry[19].split('; ')]
+        go_mf_defs = [t[:t.find('[') - 1] for t in entry[19].split('; ')]
+        # go(cellular component)
+        go_cc_ids = [t[t.find('G'):-1] for t in entry[20].split('; ')]
+        go_cc_defs = [t[:t.find('[') - 1] for t in entry[20].split('; ')]
+
+        cv = CvTerm()
+
+        for _id in go_bp_ids:
+            for _def in go_bp_defs:
+                cv.name = _id
+                cv.definition = _def
+                graph.create(cv)
+        for _id in go_mf_ids:
+            for _def in go_mf_defs:
+                cv.name = _id
+                cv.definition = _def
+                graph.create(cv)
+        for _id in go_cc_ids:
+            for _def in go_cc_defs:
+                cv.name = _id
+                cv.definition = _def
+                graph.create(cv)
+
         for interpro in entry[5].split("; "):
             import time
             if len(interpro) > 0 and interpro is not '':

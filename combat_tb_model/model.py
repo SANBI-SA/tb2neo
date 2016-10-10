@@ -86,7 +86,7 @@ class CDS(Feature):
 
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Transcript", "PART_OF")
-    protein = RelatedFrom('Polypeptide', "DERIVES_FROM")
+    polypeptide = RelatedFrom('Polypeptide', "DERIVES_FROM")
 
 
 class Polypeptide(Feature):
