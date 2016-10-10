@@ -36,9 +36,10 @@ def query_uniprot(locus_tags):
     """
     print("Querying UniProt...")
     start = time()
-    columns = "id, genes(OLN), genes, go-id, interpro, interactor, genes(PREFERRED), feature(DOMAIN EXTENT), " \
-              "protein names, go, citation, 3d, comment(FUNCTION), sequence, mass, length, families," \
-              "go(biological process),  go(molecular function), go(cellular component), genes(ALTERNATIVE), genes(ORF)"
+    columns = "id, entry name, genes(OLN), genes, go-id, interpro, interactor, genes(PREFERRED), " \
+              "feature(DOMAIN EXTENT), protein names, go, citation, 3d, comment(FUNCTION), sequence, mass, " \
+              "length, families, go(biological process),  go(molecular function), go(cellular component)," \
+              " genes(ALTERNATIVE), genes(ORF), version(sequence), genes(ALTERNATIVE)"
     uniprot_data = []
     results = []
     for tag_list in locus_tags:

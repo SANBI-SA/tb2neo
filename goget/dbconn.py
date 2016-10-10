@@ -265,12 +265,20 @@ def create_uniprot_nodes(uniprot_data):
     count = 0
     for entry in uniprot_data:
         count += 1
-        dbxref = DbXref(db="UniProt", accession=entry[0])
+        dbxref = DbXref(db="UniProt", accession=entry[1], version=entry[0])
         graph.create(dbxref)  # 3980 created of 3998 UniProt entries
-        protein = Protein()
-        protein.name = entry[8]
-        protein.uniquename = entry[0]
-        protein.ontology_id = protein.so_id
-        protein.parent = entry[1]
-        graph.create(protein)
+        polypeptide = Polypeptide()
+        polypeptide.name = entry[9]
+        polypeptide.uniquename = entry[0]
+        polypeptide.ontology_id = polypeptide.so_id
+        polypeptide.seqlen = entry[16]
+        polypeptide.residues = entry[14]
+        polypeptide.parent = entry[2]
+        graph.create(polypeptide)
+        for interpro in entry[5].split("; "):
+            import time
+            if len(interpro) > 0 and interpro is not '':
+                dbxref = DbXref(db="InterPro", accession=interpro, version=time.time())
+                graph.create(dbxref)
+
     print ("TOTAL:", count)

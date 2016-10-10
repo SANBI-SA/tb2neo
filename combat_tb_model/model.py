@@ -86,10 +86,10 @@ class CDS(Feature):
 
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Transcript", "PART_OF")
-    protein = RelatedFrom('Protein', "DERIVES_FROM")
+    protein = RelatedFrom('Polypeptide', "DERIVES_FROM")
 
 
-class Protein(Feature):
+class Polypeptide(Feature):
     so_id = "SO:0000104"
 
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
@@ -109,7 +109,7 @@ class FeatureLoc(GraphObject):
     locgroup = Property()
     rank = Property()
 
-    feature = RelatedFrom(Feature, "ON")
+    feature = RelatedFrom("Feature", "ON")
     published_in = RelatedTo("Publication", "PUBLISHED_IN")
 
     def __init__(self, srcfeature_id, fmin=None, is_fmin_partial=None, fmax=None, is_fmax_partial=None, strand=None,
@@ -189,7 +189,7 @@ class DbXref(GraphObject):
     db = Property()
     description = Property()
 
-    def __init__(self, accession=None, version=None, db=None, description=None):
+    def __init__(self, db, accession, version, description=None):
         self.accession = accession
         self.version = version
         self.db = db
