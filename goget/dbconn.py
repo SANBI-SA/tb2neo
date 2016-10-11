@@ -256,17 +256,68 @@ def build_relationships():
         graph.push(feature)
 
 
+def create_cv_term_nodes(bp, cc, mf):
+    """
+    Create CvTerm Nodes.
+    :param bp:
+    :param cc:
+    :param mf:
+    :return:
+    """
+    # go(biological process)
+    go_bp_ids = [t[t.find('G'):-1] for t in bp.split('; ') if t is not '']
+    go_bp_defs = [t[:t.find('[') - 1] for t in bp.split('; ') if t is not '']
+    # go(cellular component)
+    go_cc_ids = [t[t.find('G'):-1] for t in cc.split('; ') if t is not '']
+    go_cc_defs = [t[:t.find('[') - 1] for t in cc.split('; ') if t is not '']
+    # go(molecular function)
+    go_mf_ids = [t[t.find('G'):-1] for t in mf.split('; ') if t is not '']
+    go_mf_defs = [t[:t.find('[') - 1] for t in mf.split('; ') if t is not '']
+
+    cv = CvTerm()
+    for _id in go_bp_ids:
+        for _def in go_bp_defs:
+            cv.name = _id
+            cv.definition = _def
+            graph.create(cv)
+    for _id in go_mf_ids:
+        for _def in go_mf_defs:
+            cv.name = _id
+            cv.definition = _def
+            graph.create(cv)
+    for _id in go_cc_ids:
+        for _def in go_cc_defs:
+            cv.name = _id
+            cv.definition = _def
+            graph.create(cv)
+
+
+def create_interpro_term_nodes(entry):
+    """
+    Create InterPro Term Nodes.
+    :param entry:
+    :return:
+    """
+    for interpro in entry.split("; "):
+        import time
+        if len(interpro) > 0 and interpro is not '':
+            dbxref = DbXref(db="InterPro", accession=interpro, version=time.time())
+            graph.create(dbxref)
+
+
 def create_uniprot_nodes(uniprot_data):
     """
-    Build DbXref nodes from UniProt results
+    Build DbXref nodes from UniProt results.
     :param uniprot_data:
     :return:
     """
     count = 0
     for entry in uniprot_data:
         count += 1
+
         dbxref = DbXref(db="UniProt", accession=entry[1], version=entry[0])
         graph.create(dbxref)  # 3980 created of 3998 UniProt entries
+
         polypeptide = Polypeptide()
         polypeptide.name = entry[9]
         polypeptide.uniquename = entry[0]
@@ -276,38 +327,6 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.parent = entry[2]
         graph.create(polypeptide)
 
-        # go(biological process)
-        go_bp_ids = [t[t.find('G'):-1] for t in entry[18].split('; ')]
-        go_bp_defs = [t[:t.find('[') - 1] for t in entry[18].split('; ')]
-        # go(molecular function)
-        go_mf_ids = [t[t.find('G'):-1] for t in entry[19].split('; ')]
-        go_mf_defs = [t[:t.find('[') - 1] for t in entry[19].split('; ')]
-        # go(cellular component)
-        go_cc_ids = [t[t.find('G'):-1] for t in entry[20].split('; ')]
-        go_cc_defs = [t[:t.find('[') - 1] for t in entry[20].split('; ')]
-
-        cv = CvTerm()
-
-        for _id in go_bp_ids:
-            for _def in go_bp_defs:
-                cv.name = _id
-                cv.definition = _def
-                graph.create(cv)
-        for _id in go_mf_ids:
-            for _def in go_mf_defs:
-                cv.name = _id
-                cv.definition = _def
-                graph.create(cv)
-        for _id in go_cc_ids:
-            for _def in go_cc_defs:
-                cv.name = _id
-                cv.definition = _def
-                graph.create(cv)
-
-        for interpro in entry[5].split("; "):
-            import time
-            if len(interpro) > 0 and interpro is not '':
-                dbxref = DbXref(db="InterPro", accession=interpro, version=time.time())
-                graph.create(dbxref)
-
+        create_cv_term_nodes(entry[18], entry[19], entry[20])
+        create_interpro_term_nodes(entry[5])
     print ("TOTAL:", count)
