@@ -256,9 +256,10 @@ def build_relationships():
         graph.push(feature)
 
 
-def create_cv_term_nodes(bp, cc, mf):
+def create_cv_term_nodes(polypeptide, bp, cc, mf):
     """
     Create CvTerm Nodes.
+    :param polypeptide:
     :param bp:
     :param cc:
     :param mf:
@@ -274,35 +275,62 @@ def create_cv_term_nodes(bp, cc, mf):
     go_mf_ids = [t[t.find('G'):-1] for t in mf.split('; ') if t is not '']
     go_mf_defs = [t[:t.find('[') - 1] for t in mf.split('; ') if t is not '']
 
-    cv = CvTerm()
     for _id in go_bp_ids:
+        cv = CvTerm()
         for _def in go_bp_defs:
             cv.name = _id
             cv.definition = _def
             graph.create(cv)
+            polypeptide.cvterm.add(cv)
+            graph.push(polypeptide)
     for _id in go_mf_ids:
+        cv = CvTerm()
         for _def in go_mf_defs:
             cv.name = _id
             cv.definition = _def
             graph.create(cv)
+            polypeptide.cvterm.add(cv)
+            graph.push(polypeptide)
     for _id in go_cc_ids:
+        cv = CvTerm()
         for _def in go_cc_defs:
             cv.name = _id
             cv.definition = _def
             graph.create(cv)
+            polypeptide.cvterm.add(cv)
+            graph.push(polypeptide)
 
 
-def create_interpro_term_nodes(entry):
+def create_interpro_term_nodes(polypeptide, entry):
     """
     Create InterPro Term Nodes.
+    :param polypeptide:
     :param entry:
     :return:
     """
-    for interpro in entry.split("; "):
+    terms = [t for t in entry.split("; ") if t is not '']
+    for interpro in terms:
         import time
-        if len(interpro) > 0 and interpro is not '':
-            dbxref = DbXref(db="InterPro", accession=interpro, version=time.time())
-            graph.create(dbxref)
+        dbxref = DbXref(db="InterPro", accession=interpro, version=time.time())
+        graph.create(dbxref)
+        polypeptide.dbxref.add(dbxref)
+        graph.push(polypeptide)
+
+
+def create_pub_nodes(polypeptide, pubs):
+    """
+    Create Publication Nodes
+    :param polypeptide:
+    :param pubs:
+    :return:
+    """
+    citations = [c for c in pubs.split("; ") if c is not '']
+    for pmid in citations:
+        pub = Publication()
+        pub.uniquename = pmid
+        graph.create(pub)
+        polypeptide.published_in.add(pub)
+        graph.push(polypeptide)
 
 
 def create_uniprot_nodes(uniprot_data):
@@ -325,8 +353,14 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.seqlen = entry[16]
         polypeptide.residues = entry[14]
         polypeptide.parent = entry[2]
+        polypeptide.family = entry[17]
+        polypeptide.function = entry[13]
         graph.create(polypeptide)
 
-        create_cv_term_nodes(entry[18], entry[19], entry[20])
-        create_interpro_term_nodes(entry[5])
+        polypeptide.dbxref.add(dbxref)
+        graph.push(polypeptide)
+
+        create_cv_term_nodes(polypeptide, entry[18], entry[19], entry[20])
+        create_interpro_term_nodes(polypeptide, entry[5])
+        create_pub_nodes(polypeptide, entry[11])
     print ("TOTAL:", count)

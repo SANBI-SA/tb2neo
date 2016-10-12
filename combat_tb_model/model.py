@@ -92,6 +92,9 @@ class CDS(Feature):
 class Polypeptide(Feature):
     so_id = "SO:0000104"
 
+    family = Property()
+    function = Property()
+
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
 
 
