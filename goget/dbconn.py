@@ -1,3 +1,7 @@
+from urllib2 import HTTPError
+
+from Bio import Entrez
+from Bio import Medline
 from combat_tb_model.model import *
 from py2neo import watch, Graph, getenv
 
@@ -280,6 +284,7 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
         for _def in go_bp_defs:
             cv.name = _id
             cv.definition = _def
+            cv.namespace = "biological process"
             graph.create(cv)
             polypeptide.cvterm.add(cv)
             graph.push(polypeptide)
@@ -288,6 +293,7 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
         for _def in go_mf_defs:
             cv.name = _id
             cv.definition = _def
+            cv.namespace = "cellular component"
             graph.create(cv)
             polypeptide.cvterm.add(cv)
             graph.push(polypeptide)
@@ -296,6 +302,7 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
         for _def in go_cc_defs:
             cv.name = _id
             cv.definition = _def
+            cv.namespace = "molecular function"
             graph.create(cv)
             polypeptide.cvterm.add(cv)
             graph.push(polypeptide)
@@ -317,6 +324,41 @@ def create_interpro_term_nodes(polypeptide, entry):
         graph.push(polypeptide)
 
 
+def fetch_publications(citation):
+    """
+    Fetch Publications.
+    :param citation:
+    :return:
+    """
+    Entrez.email = 'A.N.Other@example.com'
+    try:
+        h = Entrez.efetch(db='pubmed', id=citation, rettype='medline', retmode='text')
+    except HTTPError:
+        import time
+        time.sleep(200)
+        h = Entrez.efetch(db='pubmed', id=citation, rettype='medline', retmode='text')
+    records = Medline.parse(h)
+    return records
+
+
+def create_author_nodes(publication, full_author):
+    """
+    Create Author Nodes.
+    :param publication:
+    :param full_author:
+    :return:
+    """
+    # TODO: Get more info about Authors
+    for au in full_author:
+        _author = Author()
+        _author.givennames = au
+        graph.create(_author)
+        _author.wrote.add(publication)
+        publication.author.add(_author)
+        graph.push(_author)
+        graph.push(publication)
+
+
 def create_pub_nodes(polypeptide, pubs):
     """
     Create Publication Nodes
@@ -325,12 +367,34 @@ def create_pub_nodes(polypeptide, pubs):
     :return:
     """
     citations = [c for c in pubs.split("; ") if c is not '']
-    for pmid in citations:
+    records = fetch_publications(citations)
+    for record in records:
+        pm_id = record.get('PMID', None)
+        title = record.get('TI', None)
+        volume = record.get('VI', None)
+        issue = record.get('IP', None)
+        pages = record.get('PG', None)
+        date_of_pub = record.get('DP', None)
+        pub_place = record.get('PL', None)
+        publisher = record.get('SO', None)
+        author = record.get('AU', None)
+        full_author = record.get('FAU', None)
+
         pub = Publication()
-        pub.uniquename = pmid
+        pub.pmid = pm_id
+        pub.title = title
+        pub.volume = volume
+        pub.issue = issue
+        pub.pages = pages
+        pub.year = date_of_pub
+        pub.pubplace = pub_place
+        pub.publisher = publisher
         graph.create(pub)
+
         polypeptide.published_in.add(pub)
         graph.push(polypeptide)
+
+        create_author_nodes(pub, full_author)
 
 
 def create_uniprot_nodes(uniprot_data):
@@ -344,7 +408,7 @@ def create_uniprot_nodes(uniprot_data):
         count += 1
 
         dbxref = DbXref(db="UniProt", accession=entry[1], version=entry[0])
-        graph.create(dbxref)  # 3980 created of 3998 UniProt entries
+        graph.create(dbxref)
 
         polypeptide = Polypeptide()
         polypeptide.name = entry[9]

@@ -133,8 +133,9 @@ class FeatureLoc(GraphObject):
 
 
 class Publication(GraphObject):
-    __primarykey__ = 'uniquename'
+    __primarykey__ = 'pmid'
 
+    pmid = Property()
     title = Property()
     volumetitle = Property()
     volume = Property()
@@ -148,14 +149,17 @@ class Publication(GraphObject):
     publisher = Property()
     pubplace = Property()
 
+    author = RelatedFrom("Author", "WROTE")
+
 
 class Author(GraphObject):
-    __primarykey__ = 'rank'
+    __primarykey__ = 'givennames'
 
     editor = Property()
     surname = Property()
     givennames = Property()
     suffix = Property()
+    rank = Property()
 
     wrote = RelatedTo("Publication", "WROTE")
 
@@ -172,6 +176,7 @@ class CvTerm(GraphObject):
     name = Property()
     definition = Property()
     is_obsolete = Property()
+    namespace = Property()
 
     dbxref = RelatedTo("DbXref", "XREF")
     is_a = RelatedTo("CvTerm", "IS_A")
