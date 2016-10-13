@@ -393,7 +393,6 @@ def create_pub_nodes(polypeptide, pubs):
 
         polypeptide.published_in.add(pub)
         graph.push(polypeptide)
-
         create_author_nodes(pub, full_author)
 
 
@@ -420,6 +419,15 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.family = entry[17]
         polypeptide.function = entry[13]
         graph.create(polypeptide)
+
+        for cds in CDS.select(graph):
+            for transcript in cds.part_of:
+                for gene in transcript.part_of:
+                    if gene.uniquename == "gene:" + entry[2]:
+                        polypeptide.derives_from.add(cds)
+                        cds.polypeptide.add(polypeptide)
+                        graph.push(polypeptide)
+                        graph.push(cds)
 
         polypeptide.dbxref.add(dbxref)
         graph.push(polypeptide)
