@@ -1,3 +1,6 @@
+"""
+Interface for GFF processing.
+"""
 import pprint
 from time import time
 
@@ -71,6 +74,7 @@ def load_gff_data(gff_file, limit):
         for feature in tqdm(rec.features):
             rna = ["tRNA_gene", "ncRNA_gene", "rRNA_gene"]
             create_feature_nodes(feature)
+            create_featureloc_nodes(feature)
             if feature.type == 'gene':
                 create_gene_nodes(feature)
             elif feature.type == 'pseudogene':
@@ -83,5 +87,4 @@ def load_gff_data(gff_file, limit):
                 create_transcript_nodes(feature)
             elif feature.type == 'CDS':
                 create_cds_nodes(feature)
-            create_featureloc_nodes(feature)
     in_file.close()

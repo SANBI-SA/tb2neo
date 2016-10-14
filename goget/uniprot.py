@@ -1,3 +1,6 @@
+"""
+Interface to the `UniProt <http://www.uniprot.org>`_ service.
+"""
 import StringIO
 import csv
 from time import time

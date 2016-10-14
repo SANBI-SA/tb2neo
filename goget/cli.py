@@ -1,3 +1,6 @@
+"""
+Interface CLI commands.
+"""
 from time import time
 
 import click

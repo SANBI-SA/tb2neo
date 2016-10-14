@@ -1,9 +1,13 @@
+"""
+Interface to the Neo4j Database
+"""
 from urllib2 import HTTPError
 
 from Bio import Entrez
 from Bio import Medline
 from combat_tb_model.model import *
 from py2neo import watch, Graph, getenv
+from quickgo import fetch_quick_go_data
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 watch("neo4j.bolt")
@@ -279,6 +283,7 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
     go_mf_ids = [t[t.find('G'):-1] for t in mf.split('; ') if t is not '']
     go_mf_defs = [t[:t.find('[') - 1] for t in mf.split('; ') if t is not '']
 
+    # TODO: Find a way to refactor this.
     for _id in go_bp_ids:
         cv = CvTerm()
         for _def in go_bp_defs:
@@ -288,6 +293,7 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
             graph.create(cv)
             polypeptide.cvterm.add(cv)
             graph.push(polypeptide)
+
     for _id in go_mf_ids:
         cv = CvTerm()
         for _def in go_mf_defs:
@@ -396,6 +402,19 @@ def create_pub_nodes(polypeptide, pubs):
         create_author_nodes(pub, full_author)
 
 
+def create_is_a_cv_term_rel():
+    cv = CvTerm.select(graph)
+    for cv.name in cv:
+        is_a_list = fetch_quick_go_data(cv.name)
+        # cv = CvTerm.select(graph, _id).first()
+        for go in is_a_list:
+            goid = go[go.find('G'):go.find('!')].strip()
+            cv_term = CvTerm.select(graph, goid).first()
+            if cv_term:
+                cv.is_a.add(cv_term)
+                graph.push(cv)
+
+
 def create_uniprot_nodes(uniprot_data):
     """
     Build DbXref nodes from UniProt results.
@@ -420,10 +439,12 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.function = entry[13]
         graph.create(polypeptide)
 
+        # CDS-part_of->Transcript-part_of->Gene
         for cds in CDS.select(graph):
             for transcript in cds.part_of:
                 for gene in transcript.part_of:
                     if gene.uniquename == "gene:" + entry[2]:
+                        # Polypetide-derives_from->CDS
                         polypeptide.derives_from.add(cds)
                         cds.polypeptide.add(polypeptide)
                         graph.push(polypeptide)
@@ -435,4 +456,5 @@ def create_uniprot_nodes(uniprot_data):
         create_cv_term_nodes(polypeptide, entry[18], entry[19], entry[20])
         create_interpro_term_nodes(polypeptide, entry[5])
         create_pub_nodes(polypeptide, entry[11])
+    create_is_a_cv_term_rel()
     print ("TOTAL:", count)
