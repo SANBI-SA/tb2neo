@@ -199,6 +199,7 @@ def build_relationships():
     Build relationships
     :return:
     """
+    # TODO: Try optimize this
     print("Building Relationships...")
     features = Feature.select(graph)
     for feature in features:
@@ -355,14 +356,15 @@ def create_author_nodes(publication, full_author):
     :return:
     """
     # TODO: Get more info about Authors
-    for au in full_author:
-        _author = Author()
-        _author.givennames = au
-        graph.create(_author)
-        _author.wrote.add(publication)
-        publication.author.add(_author)
-        graph.push(_author)
-        graph.push(publication)
+    if full_author:
+        for au in full_author:
+            _author = Author()
+            _author.givennames = au
+            graph.create(_author)
+            _author.wrote.add(publication)
+            publication.author.add(_author)
+            graph.push(_author)
+            graph.push(publication)
 
 
 def create_pub_nodes(polypeptide, pubs):
@@ -374,6 +376,7 @@ def create_pub_nodes(polypeptide, pubs):
     """
     citations = [c for c in pubs.split("; ") if c is not '']
     records = fetch_publications(citations)
+    # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
     for record in records:
         pm_id = record.get('PMID', None)
         title = record.get('TI', None)
@@ -403,6 +406,10 @@ def create_pub_nodes(polypeptide, pubs):
 
 
 def create_is_a_cv_term_rel():
+    """
+    Creating IS_A relationships between CVTerms
+    :return:
+    """
     cv = CvTerm.select(graph)
     for cv.name in cv:
         is_a_list = fetch_quick_go_data(cv.name)
@@ -439,11 +446,14 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.function = entry[13]
         graph.create(polypeptide)
 
-        # CDS-part_of->Transcript-part_of->Gene
-        for cds in CDS.select(graph):
-            for transcript in cds.part_of:
-                for gene in transcript.part_of:
-                    if gene.uniquename == "gene:" + entry[2]:
+        gene = Gene.select(graph, "gene:" + entry[2]).first()
+        if gene:
+            _feature = Feature.select(graph).where("_.parent = '{}'".format(gene.uniquename)).first()
+            if _feature:
+                transcript = Transcript.select(graph, _feature.uniquename).first()
+                if transcript:
+                    cds = CDS.select(graph, "CDS" + transcript.uniquename[transcript.uniquename.find(":"):]).first()
+                    if cds:
                         # Polypetide-derives_from->CDS
                         polypeptide.derives_from.add(cds)
                         cds.polypeptide.add(polypeptide)
