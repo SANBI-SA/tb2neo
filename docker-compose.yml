@@ -1,7 +1,6 @@
 version: '2'
 services:
   goget:
-    restart: always
     build: .
     image: goget
     container_name: goget
@@ -10,6 +9,7 @@ services:
     depends_on:
       - db
   db:
+    restart: always
     image: neo4j:3.0.4
     container_name: neo
     environment:

@@ -404,8 +404,8 @@ def create_is_a_cv_term_rel():
     Creating IS_A relationships between CVTerms
     :return:
     """
-    cv = CvTerm.select(graph)
-    for cv.name in cv:
+    cv_terms = CvTerm.select(graph)
+    for cv in cv_terms:
         is_a_list = fetch_quick_go_data(cv.name)
         # cv = CvTerm.select(graph, _id).first()
         for go in is_a_list:
@@ -464,5 +464,4 @@ def create_uniprot_nodes(uniprot_data):
         create_cv_term_nodes(polypeptide, entry[18], entry[19], entry[20])
         create_interpro_term_nodes(polypeptide, entry[5])
         create_pub_nodes(polypeptide, entry[11])
-    create_is_a_cv_term_rel()
     print ("TOTAL:", count)
