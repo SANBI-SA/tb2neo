@@ -1,11 +1,10 @@
 """
 Interface to the Neo4j Database
 """
-from urllib2 import HTTPError
+import time
 
-from Bio import Entrez
-from Bio import Medline
 from combat_tb_model.model import *
+from goget.ncbi import fetch_publications
 from py2neo import watch, Graph, getenv
 from quickgo import fetch_quick_go_data
 
@@ -322,6 +321,7 @@ def create_interpro_term_nodes(polypeptide, entry):
     :param entry:
     :return:
     """
+    # http://generic-model-organism-system-database.450254.n5.nabble.com/Re-GMOD-devel-Storing-Interpro-domains-in-Chado-td459778.html
     terms = [t for t in entry.split("; ") if t is not '']
     for interpro in terms:
         import time
@@ -329,23 +329,6 @@ def create_interpro_term_nodes(polypeptide, entry):
         graph.create(dbxref)
         polypeptide.dbxref.add(dbxref)
         graph.push(polypeptide)
-
-
-def fetch_publications(citation):
-    """
-    Fetch Publications.
-    :param citation:
-    :return:
-    """
-    Entrez.email = 'A.N.Other@example.com'
-    try:
-        h = Entrez.efetch(db='pubmed', id=citation, rettype='medline', retmode='text')
-    except HTTPError:
-        import time
-        time.sleep(200)
-        h = Entrez.efetch(db='pubmed', id=citation, rettype='medline', retmode='text')
-    records = Medline.parse(h)
-    return records
 
 
 def create_author_nodes(publication, full_author):
@@ -367,6 +350,38 @@ def create_author_nodes(publication, full_author):
             graph.push(publication)
 
 
+# TODO: Fetch data from PubMed
+
+def update_pub_nodes():
+    publications = Publication.select(graph)
+    print(len(list(publications)))
+    for publication in publications:
+        records = fetch_publications(publication.pmid)
+        # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
+        for record in records:
+            pm_id = record.get('PMID', None)
+            publication = Publication.select(graph, pm_id).first()
+            title = record.get('TI', None)
+            volume = record.get('VI', None)
+            issue = record.get('IP', None)
+            pages = record.get('PG', None)
+            date_of_pub = record.get('DP', None)
+            pub_place = record.get('PL', None)
+            publisher = record.get('SO', None)
+            author = record.get('AU', None)
+            full_author = record.get('FAU', None)
+
+            publication.title = title
+            publication.volume = volume
+            publication.issue = issue
+            publication.pages = pages
+            publication.year = date_of_pub
+            publication.pubplace = pub_place
+            publication.publisher = publisher
+            graph.push(publication)
+            create_author_nodes(publication, full_author)
+
+
 def create_pub_nodes(polypeptide, pubs):
     """
     Create Publication Nodes
@@ -375,34 +390,13 @@ def create_pub_nodes(polypeptide, pubs):
     :return:
     """
     citations = [c for c in pubs.split("; ") if c is not '']
-    records = fetch_publications(citations)
-    # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
-    for record in records:
-        pm_id = record.get('PMID', None)
-        title = record.get('TI', None)
-        volume = record.get('VI', None)
-        issue = record.get('IP', None)
-        pages = record.get('PG', None)
-        date_of_pub = record.get('DP', None)
-        pub_place = record.get('PL', None)
-        publisher = record.get('SO', None)
-        author = record.get('AU', None)
-        full_author = record.get('FAU', None)
 
+    for citation in citations:
         pub = Publication()
-        pub.pmid = pm_id
-        pub.title = title
-        pub.volume = volume
-        pub.issue = issue
-        pub.pages = pages
-        pub.year = date_of_pub
-        pub.pubplace = pub_place
-        pub.publisher = publisher
-        graph.create(pub)
+        pub.pmid = citation
 
         polypeptide.published_in.add(pub)
         graph.push(polypeptide)
-        create_author_nodes(pub, full_author)
 
 
 def create_is_a_cv_term_rel():
@@ -428,6 +422,10 @@ def create_uniprot_nodes(uniprot_data):
     :param uniprot_data:
     :return:
     """
+    print("=========================================")
+    print("About to create Nodes from UniProt data.")
+    print("=========================================")
+    time.sleep(2)
     count = 0
     for entry in uniprot_data:
         count += 1

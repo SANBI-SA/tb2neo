@@ -1,10 +1,9 @@
 """
 Interface CLI commands.
 """
-from time import time
 
 import click
-from dbconn import *
+from dbconn import build_relationships, update_pub_nodes, graph
 from gffproc import examine, parse_gff, get_locus_tags
 from uniprot import query_uniprot
 
@@ -28,54 +27,57 @@ def cli():
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
-@click.option('--d', '--delete', default=False, is_flag=True, prompt='Delete existing database?',
+@click.option('--d', '--delete_all', default=False, is_flag=True, prompt='Delete existing database?',
               help='Delete existing data.')
 @click.option('--r', '--relationships', default=False, is_flag=True, prompt='Build node relationships?',
               help='Build node relationships.')
 @click.option('--u', '--uniprot', default=True, is_flag=True, prompt='Query UniProt?',
               help='Query UniProt using locus tags.')
-def init(gff_file, delete, relationships, uniprot):
+@click.option('--p', '--publications', default=True, is_flag=True, prompt='Query PubMed?',
+              help='Query PubMed using pmid.')
+def init(gff_file, delete_all, relationships, uniprot, publications):
     """
     Load features from GFF file.
+    :param publications:
     :param gff_file:
-    :param delete:
+    :param delete_all:
     :param relationships:
     :param uniprot:
     :return:
     """
-    # Deleting existing data, load features and build relationships or
-    # build relationships from existing data
-    if delete and relationships:
-        start = time()
+    if delete_all and relationships and not uniprot and not publications:
+        # Deleting existing data, load features and build relationships
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        end = time()
-        print("Done in ", end - start, "secs.")
-    elif not delete and relationships:
-        start = time()
+    elif not delete_all and not uniprot and not publications and relationships:
+        # Build relationships from existing data
         build_relationships()
-        end = time()
-        print("Done in ", end - start, "secs.")
-    elif delete and not relationships:
-        start = time()
+    elif delete_all and not relationships and not uniprot and not publications:
+        # Deleting existing data, load features
         delete_data()
         parse_gff(gff_file)
-        end = time()
-        print("Done in ", end - start, "secs.")
-    elif delete and relationships and uniprot:
-        start = time()
+    elif delete_all and relationships and uniprot and not publications:
+        # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
+        # and build relationships then update Publication nodes with data from PubMed
         delete_data()
         parse_gff(gff_file)
         build_relationships()
         query_uniprot(get_locus_tags(gff_file, 400))
-        end = time()
-        print("Done in ", end - start, "secs.")
-    elif not delete and not relationships and uniprot:
-        start = time()
+    elif delete_all and relationships and uniprot and publications:
+        # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
+        # and build relationships then update Publication nodes with data from PubMed
+        delete_data()
+        parse_gff(gff_file)
+        build_relationships()
         query_uniprot(get_locus_tags(gff_file, 400))
-        end = time()
-        print("Done in ", end - start, "secs.")
+        update_pub_nodes()
+    elif not delete_all and not relationships and not publications and uniprot:
+        # Fetch data from UniProt and create nodes
+        query_uniprot(get_locus_tags(gff_file, 400))
+    elif not delete_all and not relationships and not uniprot and publications:
+        # Update Publication nodes with data from PubMed
+        update_pub_nodes()
     else:
         click.Abort()
 

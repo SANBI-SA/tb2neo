@@ -2,7 +2,6 @@
 Interface for GFF processing.
 """
 import pprint
-from time import time
 
 from BCBio import GFF
 from BCBio.GFF import GFFExaminer
@@ -44,7 +43,6 @@ def get_locus_tags(gff_file, chunk):
     :return:
     """
     print("Getting locus_tags...")
-    start = time()
     count = 0
     locus_tags = []
     for rec in GFF.parse(gff_file, limit_info=dict(gff_type=['gene'])):
@@ -56,8 +54,6 @@ def get_locus_tags(gff_file, chunk):
                 yield locus_tags
                 locus_tags = []
                 count = 0
-    end = time()
-    print('Done getting locus_tags in', end - start, 'secs.')
     yield locus_tags
 
 
