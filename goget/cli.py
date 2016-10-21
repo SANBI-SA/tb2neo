@@ -53,9 +53,6 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-    elif not delete_all and not uniprot and not publications and not map_go and relationships:
-        # Build relationships from existing data
-        build_relationships()
     elif delete_all and not relationships and not uniprot and not publications and not map_go:
         # Deleting existing data, load features
         delete_data()
@@ -76,6 +73,17 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         query_uniprot(get_locus_tags(gff_file, 400))
         update_pub_nodes()
         create_is_a_cv_term_rel()
+    elif delete_all and relationships and uniprot and not publications and map_go:
+        # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
+        # build relationships then map GO
+        delete_data()
+        parse_gff(gff_file)
+        build_relationships()
+        query_uniprot(get_locus_tags(gff_file, 400))
+        create_is_a_cv_term_rel()
+    elif not delete_all and not uniprot and not publications and not map_go and relationships:
+        # Build relationships from existing data
+        build_relationships()
     elif not delete_all and not relationships and not publications and not map_go and uniprot:
         # Fetch data from UniProt and create nodes
         query_uniprot(get_locus_tags(gff_file, 400))
