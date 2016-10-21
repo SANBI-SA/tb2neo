@@ -36,10 +36,10 @@ def cli():
 @click.option('--p', '--publications', default=True, is_flag=True, prompt='Query PubMed?',
               help='Query PubMed using pmid.')
 @click.option('--g', '--map_go', default=True, is_flag=True, prompt='Map GO Terms?',
-              help='Using QuickGo to map GO is_a relationships.')
+              help='Query QuickGo to map GO is_a relationships.')
 def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
     """
-    Load features from GFF file.
+    Load GFF features to Neo4j Graph database.
     :param map_go:
     :param publications:
     :param gff_file:
@@ -101,7 +101,7 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
 def inspect(gff_file):
     """
-    Examine GFF file.
+    Inspect GFF file.
     :param gff_file:
     :return:
     """
