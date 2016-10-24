@@ -416,6 +416,28 @@ def create_is_a_cv_term_rel():
                 graph.push(cv)
 
 
+def build_protein_interaction_rels(protein_interaction_dict):
+    """
+    Build protein-protein interactions
+    :param protein_interaction_dict:
+    :return:
+    """
+    for uni_id, interactors in protein_interaction_dict.items():
+        if len(interactors) > 0:
+            poly = Polypeptide.select(graph, uni_id).first()
+            interactors = interactors.split('; ')
+            for interactor in interactors:
+                if interactor == 'Itself':
+                    interactor = poly.uniquename
+                _poly = Polypeptide.select(graph, interactor).first()
+                if _poly is None:
+                    print("No Polypeptide with uniquename: {}".format(interactor))
+                    time.sleep(2)
+                else:
+                    poly.interacts_with.add(_poly)
+                    graph.push(poly)
+
+
 def create_uniprot_nodes(uniprot_data):
     """
     Build DbXref nodes from UniProt results.
@@ -427,7 +449,9 @@ def create_uniprot_nodes(uniprot_data):
     print("=========================================")
     time.sleep(2)
     count = 0
+    protein_interaction_dict = dict()
     for entry in uniprot_data:
+        protein_interaction_dict[entry[0]] = entry[6]
         count += 1
 
         dbxref = DbXref(db="UniProt", accession=entry[1], version=entry[0])
@@ -464,4 +488,5 @@ def create_uniprot_nodes(uniprot_data):
         create_cv_term_nodes(polypeptide, entry[18], entry[19], entry[20])
         create_interpro_term_nodes(polypeptide, entry[5])
         create_pub_nodes(polypeptide, entry[11])
+    build_protein_interaction_rels(protein_interaction_dict)
     print ("TOTAL:", count)

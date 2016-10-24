@@ -96,6 +96,7 @@ class Polypeptide(Feature):
     function = Property()
 
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
+    interacts_with = RelatedTo("Polypeptide", "INTERACTS_WITH")
 
 
 class FeatureLoc(GraphObject):
