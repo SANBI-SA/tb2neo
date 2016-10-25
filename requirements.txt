@@ -11,7 +11,6 @@ coverage==4.2
 easydev==0.9.14
 gevent==1.1.0
 gffutils==0.8.7.1
--e git+git@github.com:SANBI-SA/goget2neo.git@6b18643cb84a91f4c6851d02df2a9a127313c7f9#egg=goget
 greenlet==0.4.9
 grequests==0.3.0
 numpy==1.10.1
