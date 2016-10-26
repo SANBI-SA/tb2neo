@@ -4,12 +4,12 @@ Interface to the Neo4j Database
 import time
 
 from combat_tb_model.model import *
-from goget.ncbi import fetch_publications
+from goget.ncbi import fetch_publications, fetch_publication_list
 from py2neo import watch, Graph, getenv
 from .quickgo import fetch_quick_go_data
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
-watch("neo4j.bolt")
+# watch("neo4j.bolt")
 
 
 def create_organism_nodes():
@@ -355,31 +355,46 @@ def create_author_nodes(publication, full_author):
 def update_pub_nodes():
     publications = Publication.select(graph)
     print(len(list(publications)))
-    for publication in publications:
-        records = fetch_publications(publication.pmid)
-        # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
-        for record in records:
-            pm_id = record.get('PMID', None)
-            publication = Publication.select(graph, pm_id).first()
-            title = record.get('TI', None)
-            volume = record.get('VI', None)
-            issue = record.get('IP', None)
-            pages = record.get('PG', None)
-            date_of_pub = record.get('DP', None)
-            pub_place = record.get('PL', None)
-            publisher = record.get('SO', None)
-            author = record.get('AU', None)
-            full_author = record.get('FAU', None)
+    pmids = [ publication.pmid for publication in publications ]
+    publication_by_id = dict(zip(pmids, publications))
+    num_ids = len(pmids)
+    chunksize = 100
+    records = []
+    for start in range(0, num_ids, chunksize):
+        subset = pmids[start:start + chunksize]
+        records.extend(fetch_publication_list(subset))
+    # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
+    record_loaded_count = 0
+    for record in records:
+        if 'PMID' not in record:
+            # sometimes a PubMed ID listed in UniProt is not found in PubMed
+            if 'The following PMID is not available' not in record['id:'][0]:
+                exit("After {} records loaded, no PubMed ID in record: {}".format(record_loaded_count, record))
+        else:
+            pm_id = record['PMID']
+        # there is internal caching so using a dictionary here doesn't
+        # actually seem to save any time - pvh
+        publication = publication_by_id[pm_id] # Publication.select(graph, pm_id).first()
+        title = record.get('TI', None)
+        volume = record.get('VI', None)
+        issue = record.get('IP', None)
+        pages = record.get('PG', None)
+        date_of_pub = record.get('DP', None)
+        pub_place = record.get('PL', None)
+        publisher = record.get('SO', None)
+        author = record.get('AU', None)
+        full_author = record.get('FAU', None)
 
-            publication.title = title
-            publication.volume = volume
-            publication.issue = issue
-            publication.pages = pages
-            publication.year = date_of_pub
-            publication.pubplace = pub_place
-            publication.publisher = publisher
-            graph.push(publication)
-            create_author_nodes(publication, full_author)
+        publication.title = title
+        publication.volume = volume
+        publication.issue = issue
+        publication.pages = pages
+        publication.year = date_of_pub
+        publication.pubplace = pub_place
+        publication.publisher = publisher
+        graph.push(publication)
+        create_author_nodes(publication, full_author)
+        record_loaded_count += 1
 
 
 def create_pub_nodes(polypeptide, pubs):
