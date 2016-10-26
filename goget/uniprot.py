@@ -1,12 +1,15 @@
 """
 Interface to the `UniProt <http://www.uniprot.org>`_ service.
 """
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import csv
 from time import time
 
 from bioservices import UniProt
-from dbconn import create_uniprot_nodes
+from .dbconn import create_uniprot_nodes
 
 u = UniProt(verbose=False)
 
@@ -22,9 +25,9 @@ def search_uniprot(query, columns, proteome='UP000001584'):
     query = "taxonomy:83332+AND+proteome:{}+AND+{}".format(proteome, query)
 
     result = u.search(query=query, frmt="tab", columns=columns, sort=None)
-    reader = csv.reader(StringIO.StringIO(result), delimiter='\t')
+    reader = csv.reader(StringIO(result), delimiter='\t')
     try:
-        reader.next()
+        next(reader)
     except StopIteration:
         return []
     else:

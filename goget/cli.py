@@ -3,9 +3,9 @@ Interface CLI commands.
 """
 
 import click
-from dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel
-from gffproc import examine, parse_gff, get_locus_tags
-from uniprot import query_uniprot
+from .dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel
+from .gffproc import examine, parse_gff, get_locus_tags
+from .uniprot import query_uniprot
 
 
 def delete_data():
@@ -27,15 +27,15 @@ def cli():
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
-@click.option('--d', '--delete_all', default=False, is_flag=True, prompt='Delete existing database?',
+@click.option('-d/-D', '--delete_all/--no_delete_all', default=False, prompt='Delete existing database?',
               help='Delete existing data.')
-@click.option('--r', '--relationships', default=False, is_flag=True, prompt='Build node relationships?',
+@click.option('-r/-R', '--relationships/--no_relationships', default=False, prompt='Build node relationships?',
               help='Build node relationships.')
-@click.option('--u', '--uniprot', default=True, is_flag=True, prompt='Query UniProt?',
+@click.option('-u/-U', '--uniprot/--no_uniprot', default=True, prompt='Query UniProt?',
               help='Query UniProt using locus tags.')
-@click.option('--p', '--publications', default=True, is_flag=True, prompt='Query PubMed?',
+@click.option('-p/-P', '--publications/--no_publications', default=True, prompt='Query PubMed?',
               help='Query PubMed using pmid.')
-@click.option('--g', '--map_go', default=True, is_flag=True, prompt='Map GO Terms?',
+@click.option('-g/-G', '--map_go/--no_map_go', default=True, is_flag=True, prompt='Map GO Terms?',
               help='Query QuickGo to map GO is_a relationships.')
 def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
     """

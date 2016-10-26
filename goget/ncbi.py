@@ -2,7 +2,10 @@
 Interface to NCBI.
 """
 import time
-from urllib2 import HTTPError
+try:
+  from urllib2 import HTTPError
+except ImportError:
+  from urllib.error import HTTPError
 
 from Bio import Entrez
 from Bio import Medline

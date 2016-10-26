@@ -6,7 +6,7 @@ import time
 from combat_tb_model.model import *
 from goget.ncbi import fetch_publications
 from py2neo import watch, Graph, getenv
-from quickgo import fetch_quick_go_data
+from .quickgo import fetch_quick_go_data
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 watch("neo4j.bolt")

@@ -5,7 +5,7 @@ import pprint
 
 from BCBio import GFF
 from BCBio.GFF import GFFExaminer
-from dbconn import *
+from .dbconn import *
 from tqdm import tqdm
 
 
