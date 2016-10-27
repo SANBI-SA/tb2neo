@@ -4,11 +4,13 @@ Interface to the Neo4j Database
 import time
 
 from combat_tb_model.model import *
-from goget.ncbi import fetch_publications, fetch_publication_list
-from py2neo import watch, Graph, getenv
-from .quickgo import fetch_quick_go_data
+from goget.ncbi import fetch_publication_list
+from py2neo import Graph, getenv
+from quickgo import fetch_quick_go_data
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
+
+
 # watch("neo4j.bolt")
 
 
@@ -355,36 +357,49 @@ def create_author_nodes(publication, full_author):
 def update_pub_nodes():
     publications = Publication.select(graph)
     print(len(list(publications)))
-    pmids = [ publication.pmid for publication in publications ]
+    pmids = [publication.pmid for publication in publications]
     publication_by_id = dict(zip(pmids, publications))
     num_ids = len(pmids)
-    chunksize = 100
+    chunksize = 500
     records = []
     for start in range(0, num_ids, chunksize):
         subset = pmids[start:start + chunksize]
         records.extend(fetch_publication_list(subset))
-    # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
     record_loaded_count = 0
     for record in records:
-        if 'PMID' not in record:
-            # sometimes a PubMed ID listed in UniProt is not found in PubMed
-            if 'The following PMID is not available' not in record['id:'][0]:
-                exit("After {} records loaded, no PubMed ID in record: {}".format(record_loaded_count, record))
+        if len(record) < 2:
+            pm_id = record['id:'][0][record['id:'][0].find('able: ') + 6:]
+            print("PMID: {}".format(pm_id))
+            record = fetch_publication_list(pm_id, rettype='xml')
+            rec = next(record)
+            article = rec['MedlineCitation']['Article']
+            title = article['ArticleTitle']
+            pages = article['Pagination']['MedlinePgn']
+            volume = article['Journal']['JournalIssue']['Volume']
+            issue = article['Journal']['JournalIssue']['Issue']
+            date_of_pub = article['Journal']['JournalIssue']['PubDate']['Month'] + [
+                article['Journal']['JournalIssue']['PubDate']['Year']]
+            pub_place = rec['MedlineCitation']['MedlineJournalInfo']['Country']
+            publisher = None
+            author = None
+            # full_author = article['AuthorList']
+            full_author = None
         else:
+            # https://www.nlm.nih.gov/bsd/mms/medlineelements.html
             pm_id = record['PMID']
-        # there is internal caching so using a dictionary here doesn't
-        # actually seem to save any time - pvh
-        publication = publication_by_id[pm_id] # Publication.select(graph, pm_id).first()
-        title = record.get('TI', None)
-        volume = record.get('VI', None)
-        issue = record.get('IP', None)
-        pages = record.get('PG', None)
-        date_of_pub = record.get('DP', None)
-        pub_place = record.get('PL', None)
-        publisher = record.get('SO', None)
-        author = record.get('AU', None)
-        full_author = record.get('FAU', None)
+            # there is internal caching so using a dictionary here doesn't
+            # actually seem to save any time - pvh
+            title = record.get('TI', None)
+            volume = record.get('VI', None)
+            issue = record.get('IP', None)
+            pages = record.get('PG', None)
+            date_of_pub = record.get('DP', None)
+            pub_place = record.get('PL', None)
+            publisher = record.get('SO', None)
+            author = record.get('AU', None)
+            full_author = record.get('FAU', None)
 
+        publication = publication_by_id[pm_id]  # Publication.select(graph, pm_id).first()
         publication.title = title
         publication.volume = volume
         publication.issue = issue

@@ -9,7 +9,7 @@ import csv
 from time import time
 
 from bioservices import UniProt
-from .dbconn import create_uniprot_nodes
+from dbconn import create_uniprot_nodes
 
 u = UniProt(verbose=False)
 

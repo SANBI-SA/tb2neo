@@ -3,9 +3,9 @@ Interface CLI commands.
 """
 
 import click
-from .dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel
-from .gffproc import examine, parse_gff, get_locus_tags
-from .uniprot import query_uniprot
+from dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel
+from gffproc import examine, parse_gff, get_locus_tags
+from uniprot import query_uniprot
 
 
 def delete_data():

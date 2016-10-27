@@ -2,10 +2,11 @@
 Interface to NCBI.
 """
 import time
+
 try:
-  from urllib2 import HTTPError
+    from urllib2 import HTTPError
 except ImportError:
-  from urllib.error import HTTPError
+    from urllib.error import HTTPError
 
 from Bio import Entrez
 from Bio import Medline
@@ -30,9 +31,11 @@ def fetch_publications(citation):
     records = Medline.parse(h)
     return records
 
-def fetch_publication_list(citations):
+
+def fetch_publication_list(citations, rettype='medline'):
     """
     Fetch Publications.
+    :param rettype:
     :param citations:
     :return:
     """
@@ -45,17 +48,20 @@ def fetch_publication_list(citations):
     failed = True
     for i in range(retries):
         try:
-            h = Entrez.efetch(db='pubmed', id=citation_string, rettype='medline', retmode='text')
+            h = Entrez.efetch(db='pubmed', id=citation_string, rettype=rettype, retmode='text')
             failed = False
         except HTTPError:
             pass
         else:
             break
         finally:
-            time.sleep(0.4) # we are not allowed to hit NCBI more than 3 times per second
+            time.sleep(0.4)  # we are not allowed to hit NCBI more than 3 times per second
     if failed:
         print("Retrieval from PubMed failed")
         records = []
     else:
-        records = Medline.parse(h)
+        if rettype == 'medline':
+            records = Medline.parse(h)
+        else:
+            records = Entrez.parse(h)
     return records
