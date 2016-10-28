@@ -377,8 +377,8 @@ def update_pub_nodes():
             pages = article['Pagination']['MedlinePgn']
             volume = article['Journal']['JournalIssue']['Volume']
             issue = article['Journal']['JournalIssue']['Issue']
-            date_of_pub = article['Journal']['JournalIssue']['PubDate']['Month'] + [
-                article['Journal']['JournalIssue']['PubDate']['Year']]
+            date_of_pub = article['Journal']['JournalIssue']['PubDate']['Month'] + " " + \
+                          article['Journal']['JournalIssue']['PubDate']['Year']
             pub_place = rec['MedlineCitation']['MedlineJournalInfo']['Country']
             publisher = None
             author = None
