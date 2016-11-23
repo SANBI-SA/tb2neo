@@ -1,6 +1,8 @@
 """
 Interface to the `UniProt <http://www.uniprot.org>`_ service.
 """
+from goget.dbconn import create_uniprot_nodes
+
 try:
     from StringIO import StringIO
 except ImportError:
@@ -9,7 +11,6 @@ import csv
 from time import time
 
 from bioservices import UniProt
-from dbconn import create_uniprot_nodes
 
 u = UniProt(verbose=False)
 
@@ -60,3 +61,16 @@ def query_uniprot(locus_tags):
     print("Done fetching data from UniProt in ", end - start, "secs.")
     create_uniprot_nodes(results)
     return results
+
+
+def map_ue_to_pdb(ue):
+    """
+    Mapping UniProt entry to PDB
+    :param ue:
+    :return:
+    """
+    pdb_id = None
+    _pdb = u.mapping(fr='ID', to='PDB_ID', query=ue)
+    if len(_pdb) != 0:
+        pdb_id = _pdb[ue]
+    return pdb_id

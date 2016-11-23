@@ -5,13 +5,13 @@ import time
 
 from combat_tb_model.model import *
 from goget.ncbi import fetch_publication_list
-from py2neo import Graph, getenv
+from goget.uniprot import *
+from py2neo import Graph, getenv, watch
 from quickgo import fetch_quick_go_data
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 
-
-# watch("neo4j.bolt")
+watch("neo4j.bolt")
 
 
 def create_organism_nodes():
@@ -268,7 +268,7 @@ def build_relationships():
 
 def create_cv_term_nodes(polypeptide, bp, cc, mf):
     """
-    Create CvTerm Nodes.
+    Create CvTerm Nodes and build Polypetide relationships.
     :param polypeptide:
     :param bp:
     :param cc:
@@ -486,7 +486,7 @@ def create_uniprot_nodes(uniprot_data):
 
         dbxref = DbXref(db="UniProt", accession=entry[1], version=entry[0])
         graph.create(dbxref)
-
+        pdb_id = map_ue_to_pdb(entry[0])
         polypeptide = Polypeptide()
         polypeptide.name = entry[9]
         polypeptide.uniquename = entry[0]
@@ -496,6 +496,7 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.parent = entry[2]
         polypeptide.family = entry[17]
         polypeptide.function = entry[13]
+        polypeptide.pdb_id = pdb_id
         graph.create(polypeptide)
 
         gene = Gene.select(graph, "gene:" + entry[2]).first()

@@ -73,6 +73,14 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         query_uniprot(get_locus_tags(gff_file, 400))
         update_pub_nodes()
         create_is_a_cv_term_rel()
+    elif delete_all and relationships and uniprot and publications and not map_go:
+        # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
+        # build relationships then update Publication nodes with data from PubMed
+        delete_data()
+        parse_gff(gff_file)
+        build_relationships()
+        query_uniprot(get_locus_tags(gff_file, 400))
+        update_pub_nodes()
     elif delete_all and relationships and uniprot and not publications and map_go:
         # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
         # build relationships then map GO

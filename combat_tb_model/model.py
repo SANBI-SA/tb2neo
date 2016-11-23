@@ -94,6 +94,9 @@ class Polypeptide(Feature):
 
     family = Property()
     function = Property()
+    pdb_id = Property()
+    domain = Property()
+    three_d = Property()
 
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
     interacts_with = RelatedTo("Polypeptide", "INTERACTS_WITH")
