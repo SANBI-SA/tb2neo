@@ -46,18 +46,23 @@ class Feature(GraphObject):
 class Gene(Feature):
     so_id = "SO:0000704"
 
+    biotype = Property()
+    description = Property()
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class PseudoGene(Feature):
     so_id = "SO:0000336"
 
+    biotype = Property()
+    description = Property()
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class Transcript(Feature):
     so_id = "SO:0000673"
 
+    biotype = Property()
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Gene", "PART_OF")
 
@@ -97,6 +102,7 @@ class Polypeptide(Feature):
     pdb_id = Property()
     domain = Property()
     three_d = Property()
+    mass = Property()
 
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
     interacts_with = RelatedTo("Polypeptide", "INTERACTS_WITH")

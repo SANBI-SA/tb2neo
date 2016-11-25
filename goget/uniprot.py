@@ -1,7 +1,6 @@
 """
 Interface to the `UniProt <http://www.uniprot.org>`_ service.
 """
-from goget.dbconn import create_uniprot_nodes
 
 try:
     from StringIO import StringIO
@@ -10,6 +9,7 @@ except ImportError:
 import csv
 from time import time
 
+import dbconn
 from bioservices import UniProt
 
 u = UniProt(verbose=False)
@@ -59,7 +59,7 @@ def query_uniprot(locus_tags):
             results.append(entry)
     end = time()
     print("Done fetching data from UniProt in ", end - start, "secs.")
-    create_uniprot_nodes(results)
+    dbconn.create_uniprot_nodes(results)
     return results
 
 

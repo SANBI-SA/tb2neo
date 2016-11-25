@@ -5,9 +5,9 @@ import time
 
 from combat_tb_model.model import *
 from goget.ncbi import fetch_publication_list
-from goget.uniprot import *
 from py2neo import Graph, getenv, watch
 from quickgo import fetch_quick_go_data
+from uniprot import *
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 
@@ -37,11 +37,15 @@ def create_gene_nodes(feature):
     names = get_feature_name(feature)
     name = names.get("Name", names.get("UniqueName"))
     unique_name = names.get("UniqueName", name)
+    description = feature.qualifiers["description"]
+    biotype = feature.qualifiers['biotype'][0]
 
     gene = Gene()
     gene.ontology_id = gene.so_id
     gene.name = name
     gene.uniquename = unique_name
+    gene.biotype = biotype
+    gene.description = description
     graph.create(gene)
 
 
@@ -54,11 +58,13 @@ def create_transcript_nodes(feature):
     names = get_feature_name(feature)
     name = names.get("Name", names.get("UniqueName"))
     unique_name = names.get("UniqueName", name)
+    biotype = feature.qualifiers['biotype'][0]
 
     transcript = Transcript()
     transcript.ontology_id = transcript.so_id
     transcript.name = name
     transcript.uniquename = unique_name
+    transcript.biotype = biotype
     graph.create(transcript)
 
 
@@ -71,11 +77,15 @@ def create_pseudogene_nodes(feature):
     names = get_feature_name(feature)
     name = names.get("Name", names.get("UniqueName"))
     unique_name = names.get("UniqueName", name)
+    description = feature.qualifiers["description"][0]
+    biotype = feature.qualifiers['biotype'][0]
 
     pseudogene = PseudoGene()
     pseudogene.ontology_id = pseudogene.so_id
     pseudogene.name = name
     pseudogene.uniquename = unique_name
+    pseudogene.description = description
+    pseudogene.biotype = biotype
     graph.create(pseudogene)
 
 
@@ -477,7 +487,7 @@ def create_uniprot_nodes(uniprot_data):
     print("=========================================")
     print("About to create Nodes from UniProt data.")
     print("=========================================")
-    time.sleep(2)
+    # time.sleep(2)
     count = 0
     protein_interaction_dict = dict()
     for entry in uniprot_data:
@@ -497,6 +507,8 @@ def create_uniprot_nodes(uniprot_data):
         polypeptide.family = entry[17]
         polypeptide.function = entry[13]
         polypeptide.pdb_id = pdb_id
+        polypeptide.mass = entry[15]
+        polypeptide.three_d = entry[12]
         graph.create(polypeptide)
 
         gene = Gene.select(graph, "gene:" + entry[2]).first()

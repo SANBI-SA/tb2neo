@@ -105,6 +105,11 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
     elif not delete_all and not relationships and not uniprot and not publications and map_go:
         # Create is_a relationship between GO using QuickGo
         create_is_a_cv_term_rel()
+    elif not delete_all and not relationships and uniprot and publications and map_go:
+        # Build relationships, fetch data from UniProt and create nodes, build relationships then map GO
+        query_uniprot(get_locus_tags(gff_file, 400))
+        update_pub_nodes()
+        create_is_a_cv_term_rel()
     else:
         click.Abort()
 
