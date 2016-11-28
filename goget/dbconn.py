@@ -1,7 +1,6 @@
 """
 Interface to the Neo4j Database
 """
-import time
 
 from combat_tb_model.model import *
 from goget.ncbi import fetch_publication_list
@@ -472,7 +471,7 @@ def build_protein_interaction_rels(protein_interaction_dict):
                 _poly = Polypeptide.select(graph, interactor).first()
                 if _poly is None:
                     print("No Polypeptide with uniquename: {}".format(interactor))
-                    time.sleep(2)
+                    # time.sleep(2)
                 else:
                     poly.interacts_with.add(_poly)
                     graph.push(poly)

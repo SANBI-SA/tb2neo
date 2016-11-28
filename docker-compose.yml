@@ -11,7 +11,7 @@ services:
   db:
     restart: always
     image: neo4j:3.0.4
-    container_name: neo
+    container_name: chado-neodb
     environment:
       NEO4J_AUTH: none
     ports:
