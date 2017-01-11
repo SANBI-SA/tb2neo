@@ -43,14 +43,14 @@ def fetch_publication_list(citations, rettype='medline'):
     print("About to fetch Publication data for {} publications from PubMed.".format(len(citations)))
     print("=====================================================================")
     citation_string = ','.join(citations)
-    Entrez.email = 'support@sanbi.ac.za'
+    Entrez.email = 'A.N.Other@example.com'
     retries = 5
     failed = True
     for i in range(retries):
         try:
             h = Entrez.efetch(db='pubmed', id=citation_string, rettype=rettype, retmode='text')
             failed = False
-        except HTTPError:
+        except HTTPError as e:
             pass
         else:
             break

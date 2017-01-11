@@ -28,4 +28,5 @@ simplejson==3.8.2
 six==1.10.0
 suds-jurko==0.6
 tqdm==4.8.4
+untangle==1.1.0
 wrapt==1.10.6

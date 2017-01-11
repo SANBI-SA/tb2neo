@@ -8,7 +8,7 @@ from py2neo import Graph, getenv, watch
 from quickgo import fetch_quick_go_data
 from uniprot import *
 
-graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
+graph = Graph(host=getenv("DB", "combattb.sanbi.ac.za"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 
 watch("neo4j.bolt")
 
@@ -416,8 +416,8 @@ def update_pub_nodes():
         publication.year = date_of_pub
         publication.pubplace = pub_place
         publication.publisher = publisher
-        graph.push(publication)
         create_author_nodes(publication, full_author)
+        graph.push(publication)
         record_loaded_count += 1
 
 
