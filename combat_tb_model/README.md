@@ -45,9 +45,7 @@ $ python main.py
 ```
 *Point your browser at [http://localhost:7474](http://localhost:7474) .*
 
-### With `docker-compose`:
+### With `docker-compose`, assuming you have `docker-compose` installed
 ```
 $ docker-compose up -d
 ```
-
-*Point your browser at [http://localhost:7474](http://localhost:7474) .*

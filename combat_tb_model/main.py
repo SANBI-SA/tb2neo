@@ -1,4 +1,9 @@
-import StringIO
+#!/usr/bin/env python
+from __future__ import print_function
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import StringIO
 import csv
 import time
 from os import getenv
@@ -11,15 +16,15 @@ from tqdm import tqdm
 from model.model import Organism, Feature, FeatureLoc, Gene, PseudoGene, CDS, Transcript, Exon, TRna, NCRna, RRna, \
     DbXref, Polypeptide, CvTerm, Publication
 
+# https://neo4j.com/developer/kb/explanation-of-error-on-session-connection-using-uniform-drivers/
 graph = Graph(host=getenv("DB", "localhost"), bolt=True,
-              password=getenv("NEO4J_PASSWORD", ""))
+              password=getenv("NEO4J_PASSWORD", ""), encrypted=False)
 
 watch("neo4j.bolt")
 
 gff_file = "data/MTB_H37rv.gff3"
 
 u = UniProt(verbose=False)
-
 
 def delete_data():
     """
@@ -321,7 +326,7 @@ def search_uniprot(query, columns, proteome='UP000001584'):
     query = "taxonomy:83332+AND+proteome:{}+AND+{}".format(proteome, query)
 
     result = u.search(query=query, frmt="tab", columns=columns, sort=None)
-    reader = csv.reader(StringIO.StringIO(result), delimiter='\t')
+    reader = csv.reader(StringIO(result), delimiter='\t')
     try:
         reader.next()
     except StopIteration:
