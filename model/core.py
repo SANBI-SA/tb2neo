@@ -41,23 +41,38 @@ class Feature(GraphObject):
     published_in = RelatedTo("Publication", "PUBLISHED_IN")
     dbxref = RelatedTo("DbXref", "XREF")
     cvterm = RelatedTo("CvTerm", "ASSOC_WITH")
+    orthologous_to = RelatedTo("Feature", "ORTHOLOGOUS_TO")
+
+
+class FeatureGroup(GraphObject):
+    # I'm not sure if this should be in core - pvh
+    __primarykey__ = 'featuregroup'
+
+    name = Property()
+    description = Property()
+    contains = RelatedTo("Feature", "CONTAINS")
 
 
 class Gene(Feature):
     so_id = "SO:0000704"
 
+    biotype = Property()
+    description = Property()
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class PseudoGene(Feature):
     so_id = "SO:0000336"
 
+    biotype = Property()
+    description = Property()
     is_a = RelatedTo("Feature", "IS_A")
 
 
 class Transcript(Feature):
     so_id = "SO:0000673"
 
+    biotype = Property()
     is_a = RelatedTo("Feature", "IS_A")
     part_of = RelatedTo("Gene", "PART_OF")
 
@@ -90,10 +105,15 @@ class CDS(Feature):
 
 
 class Polypeptide(Feature):
+    # more commonly known as a Protein - we should call it that - pvh
     so_id = "SO:0000104"
 
     family = Property()
     function = Property()
+    pdb_id = Property()
+    domain = Property()
+    three_d = Property()
+    mass = Property()
 
     derives_from = RelatedTo("CDS", "DERIVES_FROM")
     interacts_with = RelatedTo("Polypeptide", "INTERACTS_WITH")
