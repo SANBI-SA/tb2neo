@@ -2,7 +2,7 @@
 Interface to the Neo4j Database
 """
 
-from combat_tb_model.model import *
+from combat_tb_model.model.core import *
 from goget.ncbi import fetch_publication_list
 from py2neo import Graph, getenv, watch
 from quickgo import fetch_quick_go_data
