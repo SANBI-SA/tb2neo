@@ -1,6 +1,7 @@
 """
 Interface to the quickGO interface.
 """
+from __future__ import print_function
 from bioservices import QuickGO
 
 

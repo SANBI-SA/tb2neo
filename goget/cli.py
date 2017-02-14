@@ -2,11 +2,13 @@
 Interface CLI commands.
 """
 
+from __future__ import print_function
 import click
-from dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel
-from gffproc import examine, parse_gff, get_locus_tags
-from uniprot import query_uniprot
-
+import Bio.SeqIO
+from .dbconn import build_relationships, update_pub_nodes, graph, create_is_a_cv_term_rel, create_uniprot_nodes, create_chromosome
+from .gffproc import examine, parse_gff, get_locus_tags
+from .uniprot import query_uniprot
+from .orthologs import add_orthologs_to_db
 
 def delete_data():
     """
@@ -37,7 +39,9 @@ def cli():
               help='Query PubMed using pmid.')
 @click.option('-g/-G', '--map_go/--no_map_go', default=True, is_flag=True, prompt='Map GO Terms?',
               help='Query QuickGo to map GO is_a relationships.')
-def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
+@click.option('-o/-O', '--add_cdc1551_orthologs/--no_add_cdc1551_orthologs', default=True, is_flag=True, prompt='Add CDC1551 ortologs?',
+              help='Add CDC1551 orthologs identified by Tuberculist')
+def init(gff_file, delete_all, relationships, uniprot, publications, map_go, add_cdc1551_orthologs):
     """
     Load GFF features to Neo4j Graph database.
     :param map_go:
@@ -46,6 +50,7 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
     :param delete_all:
     :param relationships:
     :param uniprot:
+    :param add_cdc1551_orthologs:
     :return:
     """
     if delete_all and relationships and not uniprot and not publications and not map_go:
@@ -63,14 +68,14 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
     elif delete_all and relationships and uniprot and publications and map_go:
         # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
         # build relationships then update Publication nodes with data from PubMed and map GO
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         update_pub_nodes()
         create_is_a_cv_term_rel()
     elif delete_all and relationships and uniprot and publications and not map_go:
@@ -79,7 +84,7 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         update_pub_nodes()
     elif delete_all and relationships and uniprot and not publications and map_go:
         # Deleting existing data, load features, build relationships, fetch data from UniProt and create nodes,
@@ -87,7 +92,7 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         delete_data()
         parse_gff(gff_file)
         build_relationships()
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         create_is_a_cv_term_rel()
     elif not delete_all and not relationships and not uniprot and publications and map_go:
         # Build relationships then map GO and update Publication nodes with data from PubMed
@@ -98,7 +103,7 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         build_relationships()
     elif not delete_all and not relationships and not publications and not map_go and uniprot:
         # Fetch data from UniProt and create nodes
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
     elif not delete_all and not relationships and not uniprot and not map_go and publications:
         # Update Publication nodes with data from PubMed
         update_pub_nodes()
@@ -107,12 +112,28 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go):
         create_is_a_cv_term_rel()
     elif not delete_all and not relationships and uniprot and publications and map_go:
         # Build relationships, fetch data from UniProt and create nodes, build relationships then map GO
-        query_uniprot(get_locus_tags(gff_file, 400))
+        create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         update_pub_nodes()
         create_is_a_cv_term_rel()
+    elif add_cdc1551_orthologs:
+        add_orthologs_to_db()
     else:
         click.Abort()
 
+@cli.command()
+@click.option('--name')
+@click.argument('fasta_file', type=click.File())
+def add_chromosome(fasta_file, name=None):
+    """
+    Read in a FASTA file and add it as a Chromosome record in the database.
+    :param fasta_file: click.File
+    :param name: str
+    :return:
+    """
+    seq = Bio.SeqIO.read(fasta_file, 'fasta')
+    if name is None:
+        name = seq.id
+    create_chromosome(seq, name)
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))

@@ -5,8 +5,8 @@ Interface to the Neo4j Database
 from combat_tb_model.model.core import *
 from goget.ncbi import fetch_publication_list
 from py2neo import Graph, getenv, watch
-from quickgo import fetch_quick_go_data
-from uniprot import *
+from .quickgo import fetch_quick_go_data
+from .uniprot import *
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 
@@ -151,7 +151,6 @@ def create_cds_nodes(feature):
     cds.ontology_id = cds.so_id
     graph.create(cds)
 
-
 def create_feature_nodes(feature):
     """
     Create Feature Nodes
@@ -173,7 +172,6 @@ def create_feature_nodes(feature):
     _feature.parent = parent
     _feature.uniquename = unique_name
     graph.create(_feature)
-
 
 def create_featureloc_nodes(feature):
     """
@@ -212,10 +210,17 @@ def build_relationships():
     # TODO: Try optimize this
     print("Building Relationships...")
     features = Feature.select(graph)
+    featureset = FeatureSet().select(graph).where("_.name = 'h37rv'").first()
+    if featureset is None:
+        featureset = FeatureSet()
+        featureset.name = 'h37rv'
+        featureset.description = 'M. tuberculosis H37Rv'
+        graph.create(featureset)
     for feature in features:
         # Find organism via __primarykey__ and link with feature via BELONGS_TO
         org = Organism.select(graph, 'Mycobacterium').first()
         feature.belongs_to.add(org)
+        featureset.contains.add(feature)
 
         # Find feature with a parent attr. matching this features uniquename and link them via RELATED_TO
         _feature = Feature.select(graph).where("_.parent = '{}'".format(feature.uniquename)).first()
@@ -226,6 +231,7 @@ def build_relationships():
         gene = Gene.select(graph, feature.uniquename).first()
         if gene:
             gene.is_a.add(feature)
+            featureset.contains.add(gene)
             graph.push(gene)
             # Find feature with this gene's uniquename as a parent
             _feature = Feature.select(graph).where("_.parent = '{}'".format(gene.uniquename)).first()
@@ -238,10 +244,12 @@ def build_relationships():
 
         p_gene = PseudoGene.select(graph, feature.uniquename).first()
         if p_gene:
+            featureset.contains.add(p_gene)
             p_gene.is_a.add(feature)
             graph.push(p_gene)
         transcript = Transcript.select(graph, feature.uniquename).first()
         if transcript:
+            featureset.contains.add(transcript)
             transcript.is_a.add(feature)
             graph.push(transcript)
             # Find feature with this transcript's uniquename as a parent
@@ -260,10 +268,12 @@ def build_relationships():
 
         exon = Exon.select(graph, feature.uniquename).first()
         if exon:
+            featureset.contains.add(exon)
             exon.is_a.add(feature)
             graph.push(exon)
         cds = CDS.select(graph, feature.uniquename).first()
         if cds:
+            featureset.contains.add(exon)
             cds.is_a.add(feature)
             graph.push(cds)
 
@@ -273,7 +283,7 @@ def build_relationships():
         if _feature:
             feature.location.add(_feature)
         graph.push(feature)
-
+    graph.push(featureset)
 
 def create_cv_term_nodes(polypeptide, bp, cc, mf):
     """
@@ -477,7 +487,7 @@ def build_protein_interaction_rels(protein_interaction_dict):
                     graph.push(poly)
 
 
-def create_uniprot_nodes(uniprot_data):
+def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_name='h37rv'):
     """
     Build DbXref nodes from UniProt results.
     :param uniprot_data:
@@ -489,6 +499,7 @@ def create_uniprot_nodes(uniprot_data):
     # time.sleep(2)
     count = 0
     protein_interaction_dict = dict()
+    featureset = FeatureSet().select(graph).where("_.name = '{}'".format(proteome_name)).first()
     for entry in uniprot_data:
         protein_interaction_dict[entry[0]] = entry[6]
         count += 1
@@ -497,6 +508,8 @@ def create_uniprot_nodes(uniprot_data):
         graph.create(dbxref)
         pdb_id = map_ue_to_pdb(entry[0])
         polypeptide = Polypeptide()
+        if featureset is not None:
+            featureset.contains.add(polypeptide)
         polypeptide.name = entry[9]
         polypeptide.uniquename = entry[0]
         polypeptide.ontology_id = polypeptide.so_id
@@ -530,5 +543,15 @@ def create_uniprot_nodes(uniprot_data):
         create_cv_term_nodes(polypeptide, entry[18], entry[19], entry[20])
         create_interpro_term_nodes(polypeptide, entry[5])
         create_pub_nodes(polypeptide, entry[11])
-    build_protein_interaction_rels(protein_interaction_dict)
+    if featureset is not None:
+        graph.push(featureset)
+    if add_protein_interactions:
+        build_protein_interaction_rels(protein_interaction_dict)
     print ("TOTAL:", count)
+
+def create_chromosome(seqrecord, name):
+    chromosome = Chromosome()
+    chromosome.residues = str(seqrecord.seq)
+    chromosome.seqlen = len(seqrecord.seq)
+    chromosome.name = chromosome.uniquename = name
+    graph.create(chromosome)

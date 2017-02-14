@@ -5,8 +5,8 @@ import pprint
 
 from BCBio import GFF
 from BCBio.GFF import GFFExaminer
-from dbconn import *
 from tqdm import tqdm
+from .dbconn import *
 
 
 def examine(gff_file):
@@ -21,7 +21,7 @@ def examine(gff_file):
     in_file.close()
 
 
-def parse_gff(gff_file):
+def parse_gff(gff_file, featureset_name=None, featureset_description=None):
     """
     Parse GFF file
     :return:
@@ -83,4 +83,5 @@ def load_gff_data(gff_file, limit):
                 create_transcript_nodes(feature)
             elif feature.type == 'CDS':
                 create_cds_nodes(feature)
+
     in_file.close()

@@ -8,14 +8,12 @@ except ImportError:
     from io import StringIO
 import csv
 from time import time
-
-import dbconn
 from bioservices import UniProt
 
 u = UniProt(verbose=False)
 
 
-def search_uniprot(query, columns, proteome='UP000001584'):
+def search_uniprot(query, columns, taxonomy='83332', proteome='UP000001584'):
     """
     Search UniProt and return results as list
     :param query:
@@ -23,7 +21,7 @@ def search_uniprot(query, columns, proteome='UP000001584'):
     :param proteome:
     :return:
     """
-    query = "taxonomy:83332+AND+proteome:{}+AND+{}".format(proteome, query)
+    query = "taxonomy:{}+AND+proteome:{}+AND+{}".format(taxonomy, proteome, query)
 
     result = u.search(query=query, frmt="tab", columns=columns, sort=None)
     reader = csv.reader(StringIO(result), delimiter='\t')
@@ -35,7 +33,7 @@ def search_uniprot(query, columns, proteome='UP000001584'):
         return list(reader)
 
 
-def query_uniprot(locus_tags):
+def query_uniprot(locus_tags, taxonomy='83332', proteome='UP000001584'):
     """
     Get data from UniProt
     :param locus_tags:
@@ -51,7 +49,7 @@ def query_uniprot(locus_tags):
     results = []
     for tag_list in locus_tags:
         query = '(' + '+OR+'.join(['gene:' + name for name in tag_list]) + ')'
-        result = search_uniprot(query, columns)
+        result = search_uniprot(query, columns, taxonomy=taxonomy, proteome=proteome)
         uniprot_data.append(result)
 
     for data in uniprot_data:
@@ -59,7 +57,6 @@ def query_uniprot(locus_tags):
             results.append(entry)
     end = time()
     print("Done fetching data from UniProt in ", end - start, "secs.")
-    dbconn.create_uniprot_nodes(results)
     return results
 
 
