@@ -17,6 +17,9 @@ def delete_data():
     """
     print("Deleting all nodes and relationships in {}".format(graph))
     graph.delete_all()
+    for label in ["CDS", "Transcript", "Gene", "Exon", "PseudoGene", "Feature", "FeatureLoc", "Polypeptide", "CvTerm"]:
+        for property_name in graph.schema.get_indexes(label):
+            graph.schema.drop_index(label, property_name)
 
 
 @click.group()
@@ -121,9 +124,42 @@ def init(gff_file, delete_all, relationships, uniprot, publications, map_go, add
         click.Abort()
 
 @cli.command()
+@click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
+def load_gff(gff_file):
+    parse_gff(gff_file)
+
+
+@cli.command()
+def build_rels():
+    build_relationships()
+
+
+@cli.command()
+@click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
+def load_uniprot(gff_file):
+    create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
+
+
+@cli.command()
+def pub_nodes():
+    update_pub_nodes()
+
+
+@cli.command()
+def connect_go_terms():
+    create_is_a_cv_term_rel()
+
+
+@cli.command()
+def add_cdc1551_orthologs():
+    add_orthologs_to_db()
+
+
+@cli.command()
 @click.option('--name')
+@click.option('--featureset')
 @click.argument('fasta_file', type=click.File())
-def add_chromosome(fasta_file, name=None):
+def add_chromosome(fasta_file, name=None, featureset='h37rv'):
     """
     Read in a FASTA file and add it as a Chromosome record in the database.
     :param fasta_file: click.File
@@ -133,7 +169,7 @@ def add_chromosome(fasta_file, name=None):
     seq = Bio.SeqIO.read(fasta_file, 'fasta')
     if name is None:
         name = seq.id
-    create_chromosome(seq, name)
+    create_chromosome(seq, name, featureset)
 
 @cli.command()
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))

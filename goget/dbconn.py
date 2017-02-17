@@ -2,6 +2,10 @@
 Interface to the Neo4j Database
 """
 
+from __future__ import print_function
+import re
+import sys
+from tqdm import tqdm
 from combat_tb_model.model.core import *
 from goget.ncbi import fetch_publication_list
 from py2neo import Graph, getenv, watch
@@ -10,7 +14,7 @@ from .uniprot import *
 
 graph = Graph(host=getenv("DB", "localhost"), bolt=True, password=getenv("NEO4J_PASSWORD", ""))
 
-watch("neo4j.bolt")
+# watch("neo4j.bolt")
 
 
 def create_organism_nodes():
@@ -27,7 +31,7 @@ def create_organism_nodes():
     graph.create(organism)
 
 
-def create_gene_nodes(feature):
+def create_gene_nodes(feature, transaction=None):
     """
     Create Gene Nodes
     :param feature:
@@ -45,10 +49,13 @@ def create_gene_nodes(feature):
     gene.uniquename = unique_name
     gene.biotype = biotype
     gene.description = description
-    graph.create(gene)
+    if transaction is not None:
+        transaction.create(gene)
+    else:
+        graph.create(gene)
 
 
-def create_transcript_nodes(feature):
+def create_transcript_nodes(feature, transaction=None):
     """
     Create Transcipt Nodes
     :param feature:
@@ -64,10 +71,13 @@ def create_transcript_nodes(feature):
     transcript.name = name
     transcript.uniquename = unique_name
     transcript.biotype = biotype
-    graph.create(transcript)
+    if transaction is not None:
+        transaction.create(transcript)
+    else:
+        graph.create(transcript)
 
 
-def create_pseudogene_nodes(feature):
+def create_pseudogene_nodes(feature, transaction=None):
     """
     Create Pseudogene Nodes
     :param feature:
@@ -85,10 +95,13 @@ def create_pseudogene_nodes(feature):
     pseudogene.uniquename = unique_name
     pseudogene.description = description
     pseudogene.biotype = biotype
-    graph.create(pseudogene)
+    if transaction is not None:
+        transaction.create(pseudogene)
+    else:
+        graph.create(pseudogene)
 
 
-def create_exon_nodes(feature):
+def create_exon_nodes(feature, transaction=None):
     """
     Create Exon Nodes
     :param feature:
@@ -102,10 +115,13 @@ def create_exon_nodes(feature):
     exon.ontology_id = exon.so_id
     exon.name = name
     exon.uniquename = unique_name
-    graph.create(exon)
+    if transaction is not None:
+        transaction.create(exon)
+    else:
+        graph.create(exon)
 
 
-def create_rna_nodes(feature):
+def create_rna_nodes(feature, transaction=None):
     """
     Create RNA Nodes
     :param feature:
@@ -120,22 +136,31 @@ def create_rna_nodes(feature):
         trna.ontology_id = trna.so_id
         trna.name = name
         trna.uniquename = unique_name
-        graph.create(trna)
+        if transaction is not None:
+            transaction.create(trna)
+        else:
+            graph.create(trna)
     if feature.type == 'ncRNA_gene':
         ncrna = NCRna()
         ncrna.ontology_id = ncrna.so_id
         ncrna.name = name
         ncrna.uniquename = unique_name
-        graph.create(ncrna)
+        if transaction is not None:
+            transaction.create(ncrna)
+        else:
+            graph.create(ncrna)
     if feature.type == 'rRNA_gene':
         rrna = RRna()
         rrna.ontology_id = rrna.so_id
         rrna.name = name
         rrna.uniquename = unique_name
-        graph.create(rrna)
+        if transaction is not None:
+            transaction.create(rrna)
+        else:
+            graph.create(rrna)
 
 
-def create_cds_nodes(feature):
+def create_cds_nodes(feature, transaction=None):
     """
     Create CDS Nodes
     :param feature:
@@ -149,9 +174,12 @@ def create_cds_nodes(feature):
     cds.name = name
     cds.uniquename = unique_name
     cds.ontology_id = cds.so_id
-    graph.create(cds)
+    if transaction is not None:
+        transaction.create(cds)
+    else:
+        graph.create(cds)
 
-def create_feature_nodes(feature):
+def create_feature_nodes(feature, transaction=None):
     """
     Create Feature Nodes
     :param feature:
@@ -171,9 +199,12 @@ def create_feature_nodes(feature):
     _feature.name = name
     _feature.parent = parent
     _feature.uniquename = unique_name
-    graph.create(_feature)
+    if transaction is not None:
+        transaction.create(_feature)
+    else:
+        graph.create(_feature)
 
-def create_featureloc_nodes(feature):
+def create_featureloc_nodes(feature, graph):
     """
     Create FeatureLoc Nodes
     :param feature:
@@ -182,7 +213,10 @@ def create_featureloc_nodes(feature):
     srcfeature_id = get_feature_name(feature).get("UniqueName")
     feature_loc = FeatureLoc(srcfeature_id=srcfeature_id, fmin=feature.location.start, fmax=feature.location.end,
                              strand=feature.location.strand)
-    graph.create(feature_loc)
+    if graph is not None:
+        graph.create(feature_loc)
+    else:
+        graph.create(feature_loc)
 
 
 def get_feature_name(feature):
@@ -194,7 +228,7 @@ def get_feature_name(feature):
     names = dict()
     if feature.qualifiers.get("Name"):
         names["Name"] = feature.qualifiers["Name"][0]
-        names["UniqueName"] = feature.id
+        names["UniqueName"] = feature.id if feature.id != '' else None
         # [feature.id.find(":") + 1:]
     else:
         names["Name"] = names["UniqueName"] = feature.id
@@ -209,21 +243,27 @@ def build_relationships():
     """
     # TODO: Try optimize this
     print("Building Relationships...")
-    features = Feature.select(graph)
+    feature_count = graph.run("MATCH (f:Feature) RETURN count(f) AS count").next()['count']
+    features = Feature.select(graph).where("_.uniquename = 'transcript:CCP46448'")
     featureset = FeatureSet().select(graph).where("_.name = 'h37rv'").first()
     if featureset is None:
         featureset = FeatureSet()
         featureset.name = 'h37rv'
         featureset.description = 'M. tuberculosis H37Rv'
+        print("Creating Featureset for {}".format(featureset.name))
         graph.create(featureset)
-    for feature in features:
+    org = Organism.select(graph, 'Mycobacterium').first()
+    for feature in tqdm(features, total=feature_count):
         # Find organism via __primarykey__ and link with feature via BELONGS_TO
-        org = Organism.select(graph, 'Mycobacterium').first()
-        feature.belongs_to.add(org)
+        if org is not None:
+            feature.belongs_to.add(org)
         featureset.contains.add(feature)
 
         # Find feature with a parent attr. matching this features uniquename and link them via RELATED_TO
+        print('ping', file=sys.stderr)
         _feature = Feature.select(graph).where("_.parent = '{}'".format(feature.uniquename)).first()
+        print(feature, _feature, file=sys.stderr)
+
         if _feature:
             feature.related_to.add(_feature)
 
@@ -273,7 +313,7 @@ def build_relationships():
             graph.push(exon)
         cds = CDS.select(graph, feature.uniquename).first()
         if cds:
-            featureset.contains.add(exon)
+            featureset.contains.add(cds)
             cds.is_a.add(feature)
             graph.push(cds)
 
@@ -283,7 +323,8 @@ def build_relationships():
         if _feature:
             feature.location.add(_feature)
         graph.push(feature)
-    graph.push(featureset)
+    if featureset is not None:
+        graph.push(featureset)
 
 def create_cv_term_nodes(polypeptide, bp, cc, mf):
     """
@@ -333,6 +374,9 @@ def create_cv_term_nodes(polypeptide, bp, cc, mf):
             graph.create(cv)
             polypeptide.cvterm.add(cv)
             graph.push(polypeptide)
+
+    if "name" not in graph.schema.get_indexes("CvTerm"):
+        graph.schema.create_index("CvTerm", "name")
 
 
 def create_interpro_term_nodes(polypeptide, entry):
@@ -385,7 +429,7 @@ def update_pub_nodes():
         subset = pmids[start:start + chunksize]
         records.extend(fetch_publication_list(subset))
     record_loaded_count = 0
-    for record in records:
+    for record in tqdm(records):
         if len(record) < 2:
             pm_id = record['id:'][0][record['id:'][0].find('able: ') + 6:]
             print("PMID: {}".format(pm_id))
@@ -487,7 +531,33 @@ def build_protein_interaction_rels(protein_interaction_dict):
                     graph.push(poly)
 
 
-def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_name='h37rv'):
+def build_gene_protein_relationship(locus_tag, polypeptide):
+    """
+    Build a connection between CDS and Polypeptide
+    :param locus_tag:
+    :param polypeptide:
+    :return:
+    """
+    try:
+        cds_name = graph.run(
+            """MATCH (c:CDS) -[:PART_OF]-> (Transcript) -[:PART_OF]-> (g:Gene)
+            WHERE g.uniquename = 'gene:{}' RETURN c.uniquename AS name""".format(locus_tag)).next()['name']
+        # print("CDS name:", cds_name, file=sys.stderr)
+    except StopIteration:
+        cds_name = None
+    else:
+        cds = CDS.select(graph, cds_name).first()
+        if cds:
+            locus_found = True
+            print("found CDS", cds_name, file=sys.stderr)
+            # Polypetide-derives_from->CDS
+            polypeptide.derives_from.add(cds)
+            cds.polypeptide.add(polypeptide)
+            graph.push(polypeptide)
+            graph.push(cds)
+
+
+def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_name='h37rv', locus_tag_re=re.compile('(Rv\d+\w?(?:\.\d)?\w?)')):
     """
     Build DbXref nodes from UniProt results.
     :param uniprot_data:
@@ -500,7 +570,7 @@ def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_n
     count = 0
     protein_interaction_dict = dict()
     featureset = FeatureSet().select(graph).where("_.name = '{}'".format(proteome_name)).first()
-    for entry in uniprot_data:
+    for entry in tqdm(uniprot_data):
         protein_interaction_dict[entry[0]] = entry[6]
         count += 1
 
@@ -522,20 +592,46 @@ def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_n
         polypeptide.mass = entry[15]
         polypeptide.three_d = entry[12]
         graph.create(polypeptide)
+        genes_oln = entry[2]
+        if genes_oln.strip() == '':
+            # fallback to the genes column
+            genes_oln = entry[3]
+        # print("genes_oln", genes_oln, file=sys.stderr)
+        locus_found = False
+        for locus_tag in locus_tag_re.findall(genes_oln):
+            print("locus_tag", locus_tag, file=sys.stderr)
+            build_gene_protein_relationship(locus_tag, polypeptide)
+        if not locus_found:
+            for locus_tag in locus_tag_re.findall(entry[3]):
+                print("second try, locus_tag", locus_tag, file=sys.stderr)
+                build_gene_protein_relationship(locus_tag, polypeptide)
 
-        gene = Gene.select(graph, "gene:" + entry[2]).first()
-        if gene:
-            _feature = Feature.select(graph).where("_.parent = '{}'".format(gene.uniquename)).first()
-            if _feature:
-                transcript = Transcript.select(graph, _feature.uniquename).first()
-                if transcript:
-                    cds = CDS.select(graph, "CDS" + transcript.uniquename[transcript.uniquename.find(":"):]).first()
-                    if cds:
-                        # Polypetide-derives_from->CDS
-                        polypeptide.derives_from.add(cds)
-                        cds.polypeptide.add(polypeptide)
-                        graph.push(polypeptide)
-                        graph.push(cds)
+            # gene = Gene.select(graph, "gene:" + locus_tag).first()
+            # if gene:
+            #     try:
+            #         _feature = next(iter(gene.is_a))
+            #     except StopIteration:
+            #         pass
+            #     else:
+            #         print("found feature", _feature.uniquename, file=sys.stderr)
+            #         try:
+            #             transcript_feature = next(iter(_feature.related_to))
+            #         except StopIteration:
+            #             pass
+            #         else:
+            #             transcript = Transcript.select(graph, transcript_feature.uniquename).first()
+            #             if transcript:
+            #                 print("found transcript", file=sys.stderr)
+            #                 cds = CDS.select(graph, "CDS" + transcript.uniquename[transcript.uniquename.find(":"):]).first()
+            #                 if cds:
+            #                     print("found CDS", file=sys.stderr)
+            #                     # Polypetide-derives_from->CDS
+            #                     polypeptide.derives_from.add(cds)
+            #                     cds.polypeptide.add(polypeptide)
+            #                     graph.push(polypeptide)
+            #                     graph.push(cds)
+            # else:
+            #     print("Gene gene:{} not found".format(locus_tag), file=sys.stderr)
 
         polypeptide.dbxref.add(dbxref)
         graph.push(polypeptide)
@@ -545,13 +641,28 @@ def create_uniprot_nodes(uniprot_data, add_protein_interactions=True, proteome_n
         create_pub_nodes(polypeptide, entry[11])
     if featureset is not None:
         graph.push(featureset)
+    if "uniquename" not in graph.schema.get_indexes("Polypeptide"):
+        graph.schema.create_index("Polypeptide", "uniquename")
     if add_protein_interactions:
         build_protein_interaction_rels(protein_interaction_dict)
     print ("TOTAL:", count)
 
-def create_chromosome(seqrecord, name):
+def create_chromosome(seqrecord, name, featureset_name):
     chromosome = Chromosome()
     chromosome.residues = str(seqrecord.seq)
     chromosome.seqlen = len(seqrecord.seq)
     chromosome.name = chromosome.uniquename = name
     graph.create(chromosome)
+    featureset = FeatureSet().select(graph).where("_.name = '{}'".featureset_name).first()
+    if featureset is not None:
+        featureset.contains.add(chromosome)
+        graph.push(featureset)
+
+def create_feature_indexes():
+    for label in ("CDS", "Transcript", "Gene", "Exon", "PseudoGene"):
+        if "uniquename" not in graph.schema.get_indexes(label):
+            graph.schema.create_index(label, "uniquename")
+    if "srcfeature_id" not in graph.schema.get_indexes("FeatureLoc"):
+        graph.schema.create_index("FeatureLoc", "srcfeature_id")
+    if "parent" not in graph.schema.get_indexes("Feature"):
+        graph.schema.create_index("Feature", "parent")

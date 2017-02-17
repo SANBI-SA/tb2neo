@@ -4,8 +4,9 @@ import sys
 import json
 import re
 import requests
+from tqdm import tqdm
 from bs4 import BeautifulSoup
-from combat_tb_model.model.core import Gene, Feature, FeatureGroup
+from combat_tb_model.model.core import Gene, Feature, FeatureSet
 from .dbconn import graph, create_uniprot_nodes
 from .uniprot import query_uniprot
 
@@ -60,11 +61,11 @@ def find_orthologs(ortholog_type='cdc1551', chunksize=400):
 
 
 def add_orthologs_to_db(ortholog_type='cdc1551'):
-    ortholog_group = FeatureGroup()
+    ortholog_group = FeatureSet()
     ortholog_group.name = ortholog_type
     for chunk in find_orthologs(ortholog_type):
         ortholog_names = []
-        for (name, gene) in chunk:
+        for (name, gene) in tqdm(chunk):
             ortholog = Gene()
             ortholog.uniquename = ortholog.name = ("gene:"+name)
             ortholog_feature = Feature()

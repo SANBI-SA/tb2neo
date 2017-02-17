@@ -2,6 +2,7 @@
 Interface to the `UniProt <http://www.uniprot.org>`_ service.
 """
 
+from __future__ import print_function
 try:
     from StringIO import StringIO
 except ImportError:
@@ -50,6 +51,8 @@ def query_uniprot(locus_tags, taxonomy='83332', proteome='UP000001584'):
     for tag_list in locus_tags:
         query = '(' + '+OR+'.join(['gene:' + name for name in tag_list]) + ')'
         result = search_uniprot(query, columns, taxonomy=taxonomy, proteome=proteome)
+        for row in result:
+            print(row[9], row[0], row[2], row[3])
         uniprot_data.append(result)
 
     for data in uniprot_data:
