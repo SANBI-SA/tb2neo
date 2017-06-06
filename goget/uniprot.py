@@ -22,7 +22,8 @@ def search_uniprot(query, columns, taxonomy='83332', proteome='UP000001584'):
     :param proteome:
     :return:
     """
-    query = "taxonomy:{}+AND+proteome:{}+AND+{}".format(taxonomy, proteome, query)
+    query = "taxonomy:{}+AND+proteome:{}+AND+{}".format(taxonomy,
+                                                        proteome, query)
 
     result = u.search(query=query, frmt="tab", columns=columns, sort=None)
     reader = csv.reader(StringIO(result), delimiter='\t')
@@ -42,15 +43,18 @@ def query_uniprot(locus_tags, taxonomy='83332', proteome='UP000001584'):
     """
     print("Querying UniProt...")
     start = time()
-    columns = "id, entry name, genes(OLN), genes, go-id, interpro, interactor, genes(PREFERRED), " \
-              "feature(DOMAIN EXTENT), protein names, go, citation, 3d, comment(FUNCTION), sequence, mass, " \
-              "length, families, go(biological process),  go(molecular function), go(cellular component)," \
+    columns = "id, entry name, genes(OLN), genes, go-id, interpro, " \
+              "interactor, genes(PREFERRED), feature(DOMAIN EXTENT), " \
+              "protein names, go, citation, 3d, comment(FUNCTION), " \
+              "sequence, mass, length, families, go(biological process), " \
+              "go(molecular function), go(cellular component), " \
               " genes(ALTERNATIVE), genes(ORF), version(sequence)"
     uniprot_data = []
     results = []
     for tag_list in locus_tags:
         query = '(' + '+OR+'.join(['gene:' + name for name in tag_list]) + ')'
-        result = search_uniprot(query, columns, taxonomy=taxonomy, proteome=proteome)
+        result = search_uniprot(query, columns, taxonomy=taxonomy,
+                                proteome=proteome)
         for row in result:
             print(row[9], row[0], row[2], row[3])
         uniprot_data.append(result)
