@@ -18,7 +18,7 @@ ordereddict==1.1
 pandas==0.17.1
 pexpect==4.2.1
 ptyprocess==0.5.1
-py2neo==3.1.2
+py2neo>=4.0.0b2
 pyfaidx==0.4.7.1
 python-dateutil==2.4.2
 pytz==2015.7
