@@ -3,7 +3,7 @@
 import os
 import pytest
 from combat_tb_model.model import core
-from goget.dbconn import GraphDB
+from goget.dbconn import GraphDb
 # NOTE: TODO
 # 45 tRNAs
 # 30 ncRNA_gene
@@ -11,12 +11,12 @@ from goget.dbconn import GraphDB
 
 
 @pytest.fixture
-def graph():
+def db():
     dbhost = os.environ.get('GOGET_HOST', '127.0.0.1')
     dbpassword = os.environ.get('GOGET_PASSWORD', '')
-    bolt_port = int(os.environ.get('GOGET_BOLT_PORT'), 7687)
-    http_port = int(os.environ.get('GOGET_HTTP_PORT'), 7474)
-    db = GraphDB(host=dbhost, password=dbpassword, bolt_port=bolt_port,
+    bolt_port = int(os.environ.get('GOGET_BOLT_PORT', 7687))
+    http_port = int(os.environ.get('GOGET_HTTP_PORT', 7474))
+    db = GraphDb(host=dbhost, password=dbpassword, bolt_port=bolt_port,
                  http_port=http_port)
     return db
     # watch("neo4j.bolt")
@@ -68,9 +68,9 @@ def test_gene_count(db):
                               "'gene:Rv[0-9].*' RETURN count(g)")
     assert count == H37RV_GENE_COUNT, \
         "Expected {} genes in H37Rv".format(H37RV_GENE_COUNT)
-    count = graph.evaluate("MATCH (pg:PseudoGene) " +
-                           "WHERE pg.uniquename =~ 'gene:Rv[0-9].*' " +
-                           "RETURN count(pg)")
+    count = db.graph.evaluate("MATCH (pg:PseudoGene) " +
+                              "WHERE pg.uniquename =~ 'gene:Rv[0-9].*' " +
+                              "RETURN count(pg)")
     assert count == H37RV_PSEUDOGENE_COUNT,\
         "Expected {} pseudogenes in H37Rv".format(H37RV_PSEUDOGENE_COUNT)
 
@@ -83,7 +83,7 @@ def test_ortholog_count(db):
                               "RETURN count(distinct(g2))")
     assert count == CDC1551_ORTHOLOG_COUNT,\
         "Expected {} CDC1551 orthologs".format(CDC1551_ORTHOLOG_COUNT)
-    count = graph.evaluate("MATCH (g:Gene) RETURN count(g)")
+    count = db.graph.evaluate("MATCH (g:Gene) RETURN count(g)")
     assert count == TOTAL_GENE_COUNT, "Expected {} total genes".\
         format(TOTAL_GENE_COUNT)
 
@@ -118,7 +118,7 @@ def test_cds_connections(db):
     assert count == H37RV_GENE_COUNT,\
         "Expected {} CDSs connected to genes".format(H37RV_GENE_COUNT)
 
-PUB_COUNT = 1608
+PUB_COUNT = 1640
 PP_PUBLISHED_COUNT = 3979
 
 
