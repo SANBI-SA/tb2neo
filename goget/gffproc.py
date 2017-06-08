@@ -2,7 +2,9 @@
 Interface for GFF processing.
 """
 from __future__ import print_function
+
 import pprint
+import sys
 
 from BCBio import GFF
 from BCBio.GFF import GFFExaminer
@@ -26,7 +28,7 @@ def parse_gff(db, gff_file, featureset_name=None, featureset_description=None):
     Parse GFF file
     :return:
     """
-
+    sys.stdout.write("Parsing GFF...")
     db.create_organism_nodes()
     # we are not interested in exons as this is a bacterial genome
     limits = [["gene", "pseudogene", "tRNA_gene", "ncRNA_gene", "rRNA_gene"],
@@ -66,6 +68,7 @@ def load_gff_data(db, gff_file, limit):
     :param limit:
     :return:
     """
+    sys.stdout.write("Extract and load features to Neo4j.")
     in_file = open(gff_file)
     limit_info = dict(gff_type=limit)
     transaction = db.graph.begin()

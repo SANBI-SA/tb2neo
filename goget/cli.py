@@ -3,15 +3,18 @@ Interface CLI commands.
 """
 
 from __future__ import print_function
-import click
+
 import atexit
-import os
 import logging
+import os
+
 import Bio.SeqIO
+import click
+
 from .dbconn import GraphDb
+from .docker import launch_neo4j_docker, find_docker_portmapping, kill_docker
 from .gffproc import examine, parse_gff, get_locus_tags
 from .uniprot import query_uniprot
-from .docker import launch_neo4j_docker, find_docker_portmapping, kill_docker
 
 
 class Context(object):
@@ -19,10 +22,13 @@ class Context(object):
         self.__dict__.update(kwargs)
 
 
+db_host = os.environ.get("DB", "127.0.0.1")
+
+
 @click.group()
 @click.option('--docker/--no-docker', default=False)
 @click.option('--outputdir', type=click.Path(dir_okay=True))
-@click.option('--dbhost', type=str, default='127.0.0.1')
+@click.option('--dbhost', type=str, default=db_host)
 @click.option('--dbpassword', type=str, default='')
 @click.pass_context
 def cli(ctx, docker, outputdir, dbhost, dbpassword):
@@ -75,6 +81,7 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
          map_go, add_cdc1551_orthologs):
     """
     Load GFF features to Neo4j Graph database.
+    :param ctx:
     :param map_go:
     :param publications:
     :param gff_file:
@@ -86,18 +93,18 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
     """
     db = ctx.parent.db
     if (delete_all and relationships and not uniprot and
-       not publications and not map_go):
+            not publications and not map_go):
         # Deleting existing data, load features and build relationships
         db.delete_data()
         parse_gff(db, gff_file)
         db.build_relationships()
     elif (delete_all and not relationships and
-          not uniprot and not publications and not map_go):
+              not uniprot and not publications and not map_go):
         # Deleting existing data, load features
         db.delete_data()
         parse_gff(db, gff_file)
     elif (delete_all and relationships and uniprot and
-          not publications and not map_go):
+              not publications and not map_go):
         # Deleting existing data, load features, build relationships,
         # fetch data from UniProt and create nodes, and build
         # relationships then update Publication nodes with data from PubMed
@@ -116,7 +123,7 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
         db.update_pub_nodes()
         db.create_is_a_cv_term_rel()
     elif (delete_all and relationships and uniprot and
-          publications and not map_go):
+              publications and not map_go):
         # Deleting existing data, load features, build relationships,
         # fetch data from UniProt and create nodes, build relationships
         # then update Publication nodes with data  from PubMed
@@ -126,7 +133,7 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
         db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         db.update_pub_nodes()
     elif (delete_all and relationships and uniprot and
-          not publications and map_go):
+              not publications and map_go):
         # Deleting existing data, load features, build relationships,
         # fetch data from UniProt and create nodes, build relationships
         # then map GO
@@ -136,29 +143,29 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
         db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         db.create_is_a_cv_term_rel()
     elif (not delete_all and not relationships and
-          not uniprot and publications and map_go):
+              not uniprot and publications and map_go):
         # Build relationships then map GO and update Publication
         # nodes with data from PubMed
         db.create_is_a_cv_term_rel()
         db.update_pub_nodes()
     elif (not delete_all and not uniprot and not publications and
-          not map_go and relationships):
+              not map_go and relationships):
         # Build relationships from existing data
         db.build_relationships()
     elif (not delete_all and not relationships and not publications and
-          not map_go and uniprot):
+              not map_go and uniprot):
         # Fetch data from UniProt and create nodes
         db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
     elif (not delete_all and not relationships and
-          not uniprot and not map_go and publications):
+              not uniprot and not map_go and publications):
         # Update Publication nodes with data from PubMed
         db.update_pub_nodes()
     elif (not delete_all and not relationships and not uniprot and
-          not publications and map_go):
+              not publications and map_go):
         # Create is_a relationship between GO using QuickGo
         db.create_is_a_cv_term_rel()
     elif (not delete_all and not relationships and uniprot and
-          publications and map_go):
+              publications and map_go):
         # Build relationships, fetch data from UniProt and create nodes,
         # build relationships then map GO
         db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
@@ -194,7 +201,7 @@ def build_rels(ctx):
 @click.pass_context
 def load_uniprot(ctx, gff_file):
     ctx.parent.db.create_uniprot_nodes(query_uniprot(
-                                       get_locus_tags(gff_file, 400)))
+        get_locus_tags(gff_file, 400)))
 
 
 @cli.command()

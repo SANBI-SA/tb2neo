@@ -3,31 +3,34 @@ Interface to the Neo4j Database
 """
 
 from __future__ import print_function
+
+import json
+import logging
+import os.path
 import re
 import socket
-import logging
+import sys
 import time
-import os.path
-import json
+
+from py2neo import Graph, watch
 from tqdm import tqdm
+
 from combat_tb_model.model.core import Organism, Gene, Exon, \
     Transcript, PseudoGene, TRna, NCRna, RRna, CDS, Polypeptide, Feature, \
     FeatureLoc, FeatureSet, CvTerm, DbXref, Publication, Chromosome, \
     Author
 from goget.ncbi import fetch_publication_list
-from py2neo import Graph, watch
+from .orthologs import fetch_ortholog
 from .quickgo import fetch_quick_go_data
 from .uniprot import map_ue_to_pdb
-from .orthologs import fetch_ortholog
+
 
 # graph = Graph(host=getenv("DB", "localhost"), bolt=True,
 #               password=getenv("NEO4J_PASSWORD", ""))
 
 
 class GraphDb(object):
-    def __init__(self, host, password=None,
-                 bolt_port=7687, http_port=7474,
-                 debug=False):
+    def __init__(self, host, password=None, bolt_port=7687, http_port=7474, debug=False):
         if password is None:
             password = ''
         self.debug = debug
@@ -54,12 +57,14 @@ class GraphDb(object):
                 break
         if not connected:
             raise socket.timeout('timed out trying to connect to {}'.format(
-                     host, http_port))
+                host, http_port))
         logging.debug(
             "connecting graph to http port: {} bolt_port: {} host: {}".format(
                 http_port, bolt_port, host))
-        uri = 'bolt://{}:{}'.format(host, bolt_port)
-        graph = Graph(uri, bolt=True, password=password,
+        sys.stdout.write("connecting graph to http port: {} bolt_port: {} host: {}\n".format(
+            http_port, bolt_port, host))
+        time.sleep(5)
+        graph = Graph(host=host, bolt=True, password=password,
                       bolt_port=bolt_port, http_port=http_port)
         if self.debug:
             watch("neo4j.bolt")
@@ -287,6 +292,7 @@ class GraphDb(object):
         """
         # TODO: Try optimize this
         logging.info("Building Relationships...")
+        sys.stdout.write("Building Relationships...")
         feature_count = self.graph.run(
             "MATCH (f:Feature) RETURN count(f) AS count").next()['count']
         # THIS was the code before, not sure why the select
@@ -294,7 +300,7 @@ class GraphDb(object):
         # features = Feature.select(self.graph).where(
         #     "_.uniquename = 'transcript:CCP46448'")
         features = Feature.select(self.graph)
-        featureset = FeatureSet().select(self.graph).where(
+        featureset = FeatureSet.select(self.graph).where(
             "_.name = 'h37rv'").first()
         if featureset is None:
             featureset = FeatureSet()
@@ -615,23 +621,26 @@ class GraphDb(object):
                 self.graph.push(polypeptide)
                 self.graph.push(cds)
 
-    def create_uniprot_nodes(self, uniprot_data,
-                             add_protein_interactions=True,
-                             proteome_name='h37rv',
-                             locus_tag_re=re.compile(
-                                '(Rv\d+\w?(?:\.\d)?\w?)')):
+    def create_uniprot_nodes(self, uniprot_data, add_protein_interactions=True, proteome_name='h37rv',
+                             locus_tag_re=re.compile('(Rv\d+\w?(?:\.\d)?\w?)')):
         """
         Build DbXref nodes from UniProt results.
+        :param locus_tag_re:
+        :param proteome_name:
+        :param add_protein_interactions:
         :param uniprot_data:
         :return:
         """
         print("=========================================")
         print("About to create Nodes from UniProt data.")
         print("=========================================")
+        sys.stdout.write("=========================================")
+        sys.stdout.write("About to create Nodes from UniProt data.")
+        sys.stdout.write("=========================================")
         # time.sleep(2)
         count = 0
         protein_interaction_dict = dict()
-        featureset = FeatureSet().select(self.graph).\
+        featureset = FeatureSet().select(self.graph). \
             where("_.name = '{}'".format(proteome_name)).first()
         for entry in tqdm(uniprot_data):
             protein_interaction_dict[entry[0]] = entry[6]
@@ -670,39 +679,39 @@ class GraphDb(object):
                     self.build_gene_protein_relationship(locus_tag,
                                                          polypeptide)
 
-                # gene = Gene.select(graph, "gene:" + locus_tag).first()
-                # if gene:
-                #     try:
-                #         _feature = next(iter(gene.is_a))
-                #     except StopIteration:
-                #         pass
-                #     else:
-                #         print("found feature", _feature.uniquename,
-                #               file=sys.stderr)
-                #         try:
-                #             transcript_feature = \
-                #                 next(iter(_feature.related_to))
-                #         except StopIteration:
-                #             pass
-                #         else:
-                #             transcript = Transcript.select(graph,
-                #                        transcript_feature.uniquename).first()
-                #             if transcript:
-                #                 print("found transcript", file=sys.stderr)
-                #                 cds = CDS.select(graph, "CDS" + \
-                #                           transcript.uniquename[
-                #                               transcript.uniquename.find(
-                #                                    ":"):]).first()
-                #                 if cds:
-                #                     print("found CDS", file=sys.stderr)
-                #                     # Polypetide-derives_from->CDS
-                #                     polypeptide.derives_from.add(cds)
-                #                     cds.polypeptide.add(polypeptide)
-                #                     graph.push(polypeptide)
-                #                     graph.push(cds)
-                # else:
-                #     print("Gene gene:{} not found".format(locus_tag),
-                #                                           file=sys.stderr)
+                    # gene = Gene.select(graph, "gene:" + locus_tag).first()
+                    # if gene:
+                    #     try:
+                    #         _feature = next(iter(gene.is_a))
+                    #     except StopIteration:
+                    #         pass
+                    #     else:
+                    #         print("found feature", _feature.uniquename,
+                    #               file=sys.stderr)
+                    #         try:
+                    #             transcript_feature = \
+                    #                 next(iter(_feature.related_to))
+                    #         except StopIteration:
+                    #             pass
+                    #         else:
+                    #             transcript = Transcript.select(graph,
+                    #                        transcript_feature.uniquename).first()
+                    #             if transcript:
+                    #                 print("found transcript", file=sys.stderr)
+                    #                 cds = CDS.select(graph, "CDS" + \
+                    #                           transcript.uniquename[
+                    #                               transcript.uniquename.find(
+                    #                                    ":"):]).first()
+                    #                 if cds:
+                    #                     print("found CDS", file=sys.stderr)
+                    #                     # Polypetide-derives_from->CDS
+                    #                     polypeptide.derives_from.add(cds)
+                    #                     cds.polypeptide.add(polypeptide)
+                    #                     graph.push(polypeptide)
+                    #                     graph.push(cds)
+                    # else:
+                    #     print("Gene gene:{} not found".format(locus_tag),
+                    #                                           file=sys.stderr)
 
             polypeptide.dbxref.add(dbxref)
             self.graph.push(polypeptide)
@@ -725,7 +734,7 @@ class GraphDb(object):
         chromosome.seqlen = len(seqrecord.seq)
         chromosome.name = chromosome.uniquename = name
         self.graph.create(chromosome)
-        featureset = FeatureSet().select(self.graph).\
+        featureset = FeatureSet().select(self.graph). \
             where("_.name = '{}'".featureset_name).first()
         if featureset is not None:
             featureset.contains.add(chromosome)
@@ -747,6 +756,8 @@ class GraphDb(object):
         """
         logging.info("Deleting all nodes and relationships in {}".
                      format(self.graph))
+        sys.stdout.write("Deleting all nodes and relationships in {}".
+                         format(self.graph))
         self.graph.delete_all()
         for label in ["CDS", "Transcript", "Gene", "Exon", "PseudoGene",
                       "Feature", "FeatureLoc", "Polypeptide", "CvTerm"]:
@@ -802,10 +813,10 @@ class GraphDb(object):
             ortholog_names = []
             for (name, gene) in tqdm(chunk):
                 ortholog = Gene()
-                ortholog.uniquename = ortholog.name = ("gene:"+name)
+                ortholog.uniquename = ortholog.name = ("gene:" + name)
                 ortholog_feature = Feature()
-                ortholog_feature.uniquename =\
-                    ortholog_feature.name = ("gene:"+name)
+                ortholog_feature.uniquename = \
+                    ortholog_feature.name = ("gene:" + name)
                 ortholog.is_a.add(ortholog_feature)
                 self.graph.create(ortholog_feature)
                 self.graph.create(ortholog)

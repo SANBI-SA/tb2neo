@@ -1,8 +1,9 @@
-appdirs==1.4.0
+appdirs>=1.4.0
 argcomplete==1.4.1
 argh==0.26.2
 bcbio-gff==0.6.2
 beautifulsoup4==4.4.1
+numpy==1.10.1
 biopython==1.66
 bioservices==1.4.8
 click==6.0
@@ -13,7 +14,6 @@ gevent==1.1.0
 gffutils==0.8.7.1
 greenlet==0.4.9
 grequests==0.3.0
-numpy==1.10.1
 ordereddict==1.1
 pandas==0.17.1
 pexpect==4.2.1
