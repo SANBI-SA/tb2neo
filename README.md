@@ -1,4 +1,4 @@
-# **goget**
+# **tb2neo**
 
 Parses GFF file and builds a Neo4j Graph database.
 
@@ -7,8 +7,8 @@ Parses GFF file and builds a Neo4j Graph database.
 **Clone this repository:**
 
 ```
-$ git clone https://github.com/SANBI-SA/goget2neo.git
-$ cd goget2neo
+$ git clone https://github.com/SANBI-SA/tb2neo2neo.git
+$ cd tb2neo2neo
 ```
 ### With `docker-compose:`
 **Run the following:**
@@ -34,9 +34,9 @@ $ virtualenv envname
 $ source envname/bin/activate
 $ pip install -r requirements.txt
 $ pip install --editable .
-$ goget --help
-$ goget init --help
-$ goget init --d --r --u --p --g data/MTB_H37rv.gff3
+$ tb2neo --help
+$ tb2neo init --help
+$ tb2neo init --d --r --u --p --g data/MTB_H37rv.gff3
 ```
 ***Point your browser at [localhost:7474](http://localhost:7474]) .***
 

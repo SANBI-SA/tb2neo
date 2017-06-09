@@ -3,7 +3,7 @@
 import os
 import pytest
 from combat_tb_model.model import core
-from goget.dbconn import GraphDb
+from tb2neo.dbconn import GraphDb
 # NOTE: TODO
 # 45 tRNAs
 # 30 ncRNA_gene

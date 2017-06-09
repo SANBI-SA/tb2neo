@@ -1,9 +1,9 @@
 version: '2'
 services:
-  goget:
+  tb2neo:
     build: .
-    image: goget
-    container_name: goget
+    image: tb2neo 
+    container_name: tb2neo 
     environment:
       DB: db
     depends_on:

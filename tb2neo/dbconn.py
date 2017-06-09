@@ -19,7 +19,7 @@ from combat_tb_model.model.core import Organism, Gene, Exon, \
     Transcript, PseudoGene, TRna, NCRna, RRna, CDS, Polypeptide, Feature, \
     FeatureLoc, FeatureSet, CvTerm, DbXref, Publication, Chromosome, \
     Author
-from goget.ncbi import fetch_publication_list
+from .ncbi import fetch_publication_list
 from .orthologs import fetch_ortholog
 from .quickgo import fetch_quick_go_data
 from .uniprot import map_ue_to_pdb

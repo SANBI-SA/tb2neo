@@ -14,4 +14,4 @@ WORKDIR /code
 
 RUN pip install --editable .
 
-CMD ["goget" ,"init", "-d", "-r", "-u", "-p", "-g","-o","data/MTB_H37rv.gff3"]
+CMD ["tb2neo" ,"init", "-d", "-r", "-u", "-p", "-g","-o","data/MTB_H37rv.gff3"]
