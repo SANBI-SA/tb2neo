@@ -10,7 +10,6 @@ setup(
     install_requires=[
         'click',
         'bioservices',
-        'pandas',
         'bcbio-gff',
         'biopython',
         'beautifulsoup4'
