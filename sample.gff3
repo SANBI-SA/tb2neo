@@ -1,0 +1,2 @@
+Chromosome	ena	gene	4063901	4064872	.	-	.	ID=gene:Rv3625c;Name=mesJ;biotype=protein_coding;description=Possible cell cycle protein MesJ;gene_id=Rv3625c;logic_name=ena;version=1
+Chromosome	ena	transcript	4063901	4064872	.	-	.	ID=transcript:CCP46448;Parent=gene:Rv3625c;Name=mesJ-1;biotype=protein_coding;transcript_id=CCP46448;version=1
