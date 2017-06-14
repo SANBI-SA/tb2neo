@@ -143,6 +143,16 @@ def init(ctx, gff_file, delete_all, relationships, uniprot, publications,
         db.build_relationships()
         db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
         db.create_is_a_cv_term_rel()
+    elif (delete_all and relationships and uniprot and publications and
+          map_go and add_cdc1551_orthologs):
+        # do all steps
+        db.delete_data()
+        parse_gff(db, gff_file)
+        db.build_relationships()
+        db.create_uniprot_nodes(query_uniprot(get_locus_tags(gff_file, 400)))
+        db.create_is_a_cv_term_rel()
+        db.update_pub_nodes()
+        db.add_orthologs_to_db()
     elif (not delete_all and not relationships and
           not uniprot and publications and map_go):
         # Build relationships then map GO and update Publication
