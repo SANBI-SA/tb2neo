@@ -3,6 +3,7 @@ import time
 import random
 import shlex
 import subprocess
+import os
 try:
     from io import StringIO
 except:
@@ -56,19 +57,32 @@ def kill_docker(proc, container_name):
     proc.wait()
 
 
-def launch_neo4j_docker(outputdir, container_name=None):
+def launch_neo4j_docker(outputdir, container_name=None, use_bolt=False,
+                        image_name='quay.io/thoba/neo_ie:3.1'):
     """Launch a Neo4j server in a Docker container
 
     outputdir:str -
     """
     if container_name is None:
         container_name = '_'.join([random.choice(WORDS), random.choice(WORDS)])
+    if use_bolt:
+        bolt_string = ' -e ENABLE_BOLT=true '
+    else:
+        bolt_string = ''
     cmd_str = (
-        "docker run --rm -v {}:/data -p 7474 -p 7687 --name={} -e NEO4J_AUTH=none neo4j:3.2.0".
+        ("docker run --rm -v {outputdir}:/data -p 7474 -p 7687 " +
+         "-e USER_UID={uid} -e USER_GID={gid} -e MONITOR_TRAFFIC=false " +
+         "{bolt} --name={name} -e NEO4J_AUTH=none {image_name}").
         format(
-            outputdir, container_name
+            outputdir=outputdir,
+            uid=os.getuid(),
+            gid=os.getgid(),
+            name=container_name,
+            bolt=bolt_string,
+            image_name=image_name
         )
     )
+    print("STR:", cmd_str)
     cmd = shlex.split(cmd_str)
     proc = subprocess.Popen(cmd)
     time.sleep(10)

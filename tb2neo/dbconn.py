@@ -30,13 +30,16 @@ from .uniprot import map_ue_to_pdb
 
 
 class GraphDb(object):
-    def __init__(self, host, password=None, bolt_port=7687, http_port=7474, debug=False):
+    def __init__(self, host, password=None, bolt_port=7687, http_port=7474,
+                 use_bolt=False, debug=False):
         if password is None:
             password = ''
         self.debug = debug
-        self.graph = self.connect(host, password, bolt_port, http_port)
+        self.graph = self.connect(host, password, bolt_port, http_port,
+                                  use_bolt)
 
-    def connect(self, host, password, bolt_port, http_port, timeout=30):
+    def connect(self, host, password, bolt_port, http_port, use_bolt=False,
+                timeout=30):
         """connect - make connection to Neo4j DB
 
         :type host: str - hostname or IP of Neo4j database server
@@ -46,6 +49,7 @@ class GraphDb(object):
         :type timeout: int - timeout for waiting for the Neo4j connection"""
 
         connected = False
+        # print("testing if we can connect at:", http_port)
         while timeout > 0:
             try:
                 socket.create_connection((host, http_port), 1)
@@ -61,11 +65,18 @@ class GraphDb(object):
         logging.debug(
             "connecting graph to http port: {} bolt_port: {} host: {}".format(
                 http_port, bolt_port, host))
-        sys.stdout.write("connecting graph to http port: {} bolt_port: {} host: {}\n".format(
-            http_port, bolt_port, host))
+        self.bolt_port = bolt_port
+        self.http_port = http_port
+        sys.stdout.write(
+            "connecting to http port: {} bolt_port: {} host: {} bolt: {}\n".
+            format(http_port, bolt_port, host, use_bolt))
         time.sleep(5)
-        graph = Graph(host=host, bolt=True, password=password,
-                      bolt_port=bolt_port, http_port=http_port)
+
+        graph = Graph('http://{}:{}/db/data/'.format(host, self.http_port),
+                      'bolt://{}:{}/'.format(host, self.bolt_port),
+                      bolt=use_bolt, password=password,
+                      bolt_port=bolt_port,
+                      http_port=http_port)
         if self.debug:
             watch("neo4j.bolt")
         logging.debug("connected", graph)
@@ -293,8 +304,8 @@ class GraphDb(object):
         # TODO: Try optimize this
         logging.info("Building Relationships...")
         sys.stdout.write("Building Relationships...")
-        feature_count = self.graph.run(
-            "MATCH (f:Feature) RETURN count(f) AS count").next()['count']
+        feature_count = self.graph.data(
+            "MATCH (f:Feature) RETURN count(f) AS count")[0]['count']
         # THIS was the code before, not sure why the select
         # was there - pvh 6/6/2017
         # features = Feature.select(self.graph).where(
@@ -510,7 +521,7 @@ class GraphDb(object):
                 pub_place = \
                     rec['MedlineCitation']['MedlineJournalInfo']['Country']
                 publisher = None
-                author = None
+                # author = None
                 # full_author = article['AuthorList']
                 full_author = None
             else:
@@ -525,7 +536,8 @@ class GraphDb(object):
                 date_of_pub = record.get('DP', None)
                 pub_place = record.get('PL', None)
                 publisher = record.get('SO', None)
-                author = record.get('AU', None)
+                # not using author at the moment
+                # author = record.get('AU', None)
                 full_author = record.get('FAU', None)
 
             publication = publication_by_id[pm_id]
@@ -621,8 +633,10 @@ class GraphDb(object):
                 self.graph.push(polypeptide)
                 self.graph.push(cds)
 
-    def create_uniprot_nodes(self, uniprot_data, add_protein_interactions=True, proteome_name='h37rv',
-                             locus_tag_re=re.compile('(Rv\d+\w?(?:\.\d)?\w?)')):
+    def create_uniprot_nodes(self, uniprot_data, add_protein_interactions=True,
+                             proteome_name='h37rv',
+                             locus_tag_re=re.
+                             compile('(Rv\d+\w?(?:\.\d)?\w?)')):
         """
         Build DbXref nodes from UniProt results.
         :param locus_tag_re:
@@ -697,7 +711,8 @@ class GraphDb(object):
                     #             transcript = Transcript.select(graph,
                     #                        transcript_feature.uniquename).first()
                     #             if transcript:
-                    #                 print("found transcript", file=sys.stderr)
+                    #                 print("found transcript",
+                    #                       file=sys.stderr)
                     #                 cds = CDS.select(graph, "CDS" + \
                     #                           transcript.uniquename[
                     #                               transcript.uniquename.find(

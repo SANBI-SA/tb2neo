@@ -13,7 +13,8 @@ def fetch_quick_go_data(go_id):
     """
     s = QuickGO()
     go_is_a = []
-    # TODO: Fix 'GTP catabolic process [GO:0006203' in cv_term name during creation
+    # TODO: Fix 'GTP catabolic process [GO:0006203' in cv_term name
+    # during creation
     if not go_id.startswith('GO:'):
         go_id = go_id[go_id.find('[') + 1:]
     print("===============")
