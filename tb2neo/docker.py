@@ -58,7 +58,7 @@ def kill_docker(proc, container_name):
 
 
 def launch_neo4j_docker(outputdir, container_name=None, use_bolt=False,
-                        image_name='quay.io/thoba/neo_ie:3.1'):
+                        image_name='quay.io/sanbi-sa/neo_ie:3.1'):
     """Launch a Neo4j server in a Docker container
 
     outputdir:str -
