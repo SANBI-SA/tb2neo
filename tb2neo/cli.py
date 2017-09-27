@@ -11,9 +11,9 @@ import os
 import Bio.SeqIO
 import click
 
-from .dbconn import GraphDb
-from .docker import launch_neo4j_docker, find_docker_portmapping, kill_docker
-from .gffproc import examine, parse_gff, get_locus_tags
+from combat_tb_utils.db import GraphDb
+from combat_tb_utils.docker import launch_neo4j_docker, find_docker_portmapping, kill_docker
+from .gffproc import examine, parse_gff, import_gff, get_locus_tags
 from .uniprot import query_uniprot
 
 
@@ -27,12 +27,14 @@ db_host = os.environ.get("DB", "127.0.0.1")
 
 @click.group()
 @click.option('--docker/--no-docker', default=False)
-@click.option('--use-bolt/--no-use-bolt', default=False)
+# neomodel forces us to use bolt
+# @click.option('--use-bolt/--no-use-bolt', default=False)
 @click.option('--outputdir', type=click.Path(dir_okay=True))
 @click.option('--dbhost', type=str, default=db_host)
 @click.option('--dbpassword', type=str, default='')
+@click.option('--debug/--no-debug', default=False)
 @click.pass_context
-def cli(ctx, use_bolt, docker, outputdir, dbhost, dbpassword):
+def cli(ctx, docker, outputdir, dbhost, dbpassword, debug):
     """
     This script parses a GFF file and builds a Neo4j Graph database.
     """
@@ -41,19 +43,19 @@ def cli(ctx, use_bolt, docker, outputdir, dbhost, dbpassword):
     if docker:
         if outputdir is None:
             outputdir = os.getcwd()
-        (proc, container_name) = launch_neo4j_docker(outputdir)
+        (proc, container_name) = launch_neo4j_docker(outputdir, use_bolt=True)
         atexit.register(kill_docker, proc, container_name)
         port_mapping = find_docker_portmapping(container_name)
         bolt_port = port_mapping[7687]
         http_port = port_mapping[7474]
         print("docker mode http port: {} bolt port: {}".
               format(http_port, bolt_port))
-        db = GraphDb(host='localhost', password='', use_bolt=use_bolt,
-                     bolt_port=bolt_port, http_port=http_port)
+        db = GraphDb(host='localhost', password='', use_bolt=True,
+                     bolt_port=bolt_port, http_port=http_port, debug=debug)
     else:
         # do "default" connection
         print("non-docker mode, connecting to host:", dbhost)
-        db = GraphDb(host=dbhost, password=dbpassword, use_bolt=use_bolt)
+        db = GraphDb(host=dbhost, password=dbpassword, use_bolt=True)
     ctx.db = db
 
 
@@ -198,7 +200,7 @@ def delete_all(ctx):
 @click.argument('gff_file', type=click.Path(exists=True, file_okay=True))
 @click.pass_context
 def load_gff(ctx, gff_file):
-    parse_gff(ctx.parent.db, gff_file)
+    import_gff(ctx.parent.db, gff_file)
 
 
 @cli.command()

@@ -15,6 +15,7 @@ import time
 from py2neo import Graph, watch
 from tqdm import tqdm
 
+from combat_tb_utils.db import GraphDb
 from combat_tb_model.model.core import Organism, Gene, Exon, \
     Transcript, PseudoGene, TRna, NCRna, RRna, CDS, Polypeptide, Feature, \
     FeatureLoc, FeatureSet, CvTerm, DbXref, Publication, Chromosome, \
@@ -29,70 +30,19 @@ from .uniprot import map_ue_to_pdb
 #               password=getenv("NEO4J_PASSWORD", ""))
 
 
-class GraphDb(object):
-    def __init__(self, host, password=None, bolt_port=7687, http_port=7474,
-                 use_bolt=False, debug=False):
-        if password is None:
-            password = ''
-        self.debug = debug
-        self.graph = self.connect(host, password, bolt_port, http_port,
-                                  use_bolt)
-
-    def connect(self, host, password, bolt_port, http_port, use_bolt=False,
-                timeout=30):
-        """connect - make connection to Neo4j DB
-
-        :type host: str - hostname or IP of Neo4j database server
-        :type password: str - password for Neo4j database server
-        :type bolt_port: int - port for Neo4j Bolt protocol
-        :type http_port: int - port for Neo4j HTTP protocol
-        :type timeout: int - timeout for waiting for the Neo4j connection"""
-
-        connected = False
-        # print("testing if we can connect at:", http_port)
-        while timeout > 0:
-            try:
-                socket.create_connection((host, http_port), 1)
-            except socket.error:
-                timeout -= 1
-                time.sleep(1)
-            else:
-                connected = True
-                break
-        if not connected:
-            raise socket.timeout('timed out trying to connect to {}'.format(
-                host, http_port))
-        logging.debug(
-            "connecting graph to http port: {} bolt_port: {} host: {}".format(
-                http_port, bolt_port, host))
-        self.bolt_port = bolt_port
-        self.http_port = http_port
-        sys.stdout.write(
-            "connecting to http port: {} bolt_port: {} host: {} bolt: {}\n".
-            format(http_port, bolt_port, host, use_bolt))
-        time.sleep(5)
-
-        graph = Graph('http://{}:{}/db/data/'.format(host, self.http_port),
-                      'bolt://{}:{}/'.format(host, self.bolt_port),
-                      bolt=use_bolt, password=password,
-                      bolt_port=bolt_port,
-                      http_port=http_port)
-        if self.debug:
-            watch("neo4j.bolt")
-        logging.debug("connected", graph)
-        return graph
+class TbGraphDb(GraphDb):
 
     def create_organism_nodes(self):
         """
         Create Organism Nodes
         :return:
         """
-        abbrev = "H37Rv"
+        strain = "H37Rv"
         genus = "Mycobacterium"
-        species = "M. tuberculosis"
+        species = "tuberculosis"
         common_name = "TB"
 
-        organism = Organism(abbreviation=abbrev, genus=genus,
+        organism = Organism(strain=strain, genus=genus,
                             species=species, common_name=common_name)
         self.graph.create(organism)
 
@@ -114,10 +64,7 @@ class GraphDb(object):
         gene.uniquename = unique_name
         gene.biotype = biotype
         gene.description = description
-        if transaction is not None:
-            transaction.create(gene)
-        else:
-            self.graph.create(gene)
+        gene.save()
 
     def create_transcript_nodes(self, feature, transaction=None):
         """

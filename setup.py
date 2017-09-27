@@ -14,7 +14,9 @@ setup(
         'bioservices',
         'bcbio-gff',
         'biopython',
-        'beautifulsoup4'
+        'beautifulsoup4',
+	'combat_tb_model',
+	'combat_tb_utils'
     ],
     entry_points={
         'console_scripts': ['tb2neo=tb2neo.cli:cli']
